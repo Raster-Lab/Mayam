@@ -51,7 +51,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 
 - [ ] Implement **C-STORE SCP** — receive DICOM objects from modalities and workstations.
 - [ ] Design the on-disk storage layout (configurable directory hierarchy by Patient/Study/Series).
-- [ ] Implement the metadata index database (PostgreSQL 18.3 primary; SQLite for lightweight/embedded deployments).
+- [ ] Implement the metadata index database (PostgreSQL 18.3 primary; SwiftData/CoreData for macOS embedded deployments; SQLite for Linux embedded deployments).
 - [ ] Store received objects with SHA-256 integrity checksums.
 - [ ] Implement **Delete Protect** flag at Patient, Accession, and Study level — when set, the entity (and all child records) is protected from deletion until the flag is explicitly removed by an authorised user.
 - [ ] Implement **Privacy Flag** at Patient, Accession, and Study level — when set, routing and query access to the entity's data is restricted to explicitly authorised users or roles.
@@ -291,7 +291,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 |---|---|---|---|
 | 1 | Project Bootstrap & Core Infrastructure | ✅ Complete | SPM workspace, CI, architecture foundations |
 | 2 | DICOM Association & Verification | 🔲 Not Started | C-ECHO SCP/SCU, TCP association handling |
-| 3 | Storage Service | 🔲 Not Started | C-STORE SCP/SCU, on-disk archive, metadata DB (PostgreSQL 18.3), store-as-received, serve-as-stored, ZIP/TAR+Zstd packaging, storage policy matrix, Delete Protect & Privacy Flag |
+| 3 | Storage Service | 🔲 Not Started | C-STORE SCP/SCU, on-disk archive, metadata DB (PostgreSQL 18.3 primary; SwiftData/CoreData macOS embedded; SQLite Linux embedded), store-as-received, serve-as-stored, ZIP/TAR+Zstd packaging, storage policy matrix, Delete Protect & Privacy Flag |
 | 4 | Image Codec Integration | 🔲 Not Started | J2KSwift, JLSwift, JXLSwift, OpenJP3D, compressed copy on receipt, unified object presentation, representation model |
 | 5 | Query/Retrieve Services | 🔲 Not Started | C-FIND, C-MOVE, C-GET SCP/SCU |
 | 6 | DICOMweb Services | 🔲 Not Started | WADO-RS, QIDO-RS, STOW-RS, UPS-RS |

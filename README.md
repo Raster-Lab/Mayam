@@ -188,7 +188,7 @@ Leveraging Raster-Lab's native Swift codecs for best-in-class performance on App
 | Image Codecs | J2KSwift, JLSwift, JXLSwift, OpenJP3D |
 | HL7 / FHIR | [HL7kit](https://github.com/Raster-Lab/HL7kit) |
 | Web Framework | Hummingbird (Swift) |
-| Database | PostgreSQL 18.3 (primary) / SQLite (embedded) |
+| Database | PostgreSQL 18.3 (primary) / SwiftData or CoreData (macOS embedded) / SQLite (Linux embedded) |
 | Admin UI | HTML5, CSS3, Vanilla JS (no heavy frameworks) |
 | Authentication | LDAP (DICOM Configuration schema) |
 | Build System | Swift Package Manager |
