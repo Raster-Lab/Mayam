@@ -178,7 +178,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 - Implement **Instance Availability Notification (IAN)** — notify downstream systems (including RIS) when studies become available, both as a DICOM service and as a RESTful API.
 - Implement **IAN-Style REST APIs for RIS Integration** — RESTful endpoints that mirror IAN semantics, enabling RIS and other non-DICOM systems to subscribe to study-available, study-updated, and study-archived events via webhooks or polling.
 - Define and implement the **RIS Event Catalog** — the full set of lifecycle events published via DICOM IAN and RESTful webhooks:
-  - `study.received` — first instance of a new study stored (payload: studyInstanceUID, accessionNumber, patientID, patientName, modality, studyDate, studyDescription, receivingAE, sourceAE, timestamp).
+  - `study.received` — first instance of a new study stored (payload: studyInstanceUID, accessionNumber, patientID, patientName, modality, studyDate, studyDescription?, receivingAE, sourceAE, timestamp).
   - `study.updated` — additional instances arrive for an existing study (payload: studyInstanceUID, accessionNumber, seriesCount, instanceCount, latestSeriesUID, sourceAE, timestamp).
   - `study.complete` — study completeness criteria met (payload: studyInstanceUID, accessionNumber, patientID, modality, seriesCount, instanceCount, studyStatus, timestamp).
   - `study.available` — study available for retrieval / IAN equivalent (payload: studyInstanceUID, accessionNumber, patientID, retrieveAE, retrieveURL, availableTransferSyntaxes[], timestamp).
@@ -187,7 +187,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
   - `study.rehydrated` — study recalled to online tier (payload: studyInstanceUID, accessionNumber, previousTier, currentTier, recallDuration, timestamp).
   - `study.deleted` — study permanently removed (payload: studyInstanceUID, accessionNumber, patientID, deletionReason, deletedBy, timestamp).
   - `study.error` — processing error (payload: studyInstanceUID, accessionNumber, errorCode, errorMessage, stage, timestamp).
-  - Webhook delivery via JSON/HTTPS POST with HMAC-SHA256 signatures, configurable retry with exponential back-off, and subscription management via the Admin API.
+  - Webhook delivery via JSON/HTTPS POST with HMAC-SHA256 signatures (per-subscription shared secret with key rotation support), configurable retry with exponential back-off, and subscription management via the Admin API. Fields marked with `?` are nullable and may be absent when the triggering event occurs before the attribute is available.
 - Integrate with HL7 v2.x ORM/ORU messages via [HL7kit](https://github.com/Raster-Lab/HL7kit) for order-driven workflows.
 - Add worklist management screens to the web console.
 

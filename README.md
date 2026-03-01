@@ -89,7 +89,7 @@ Mayam Server publishes lifecycle events via DICOM Instance Availability Notifica
 
 | Event | Trigger | Key Payload Fields |
 |---|---|---|
-| `study.received` | First instance of a new study is stored | `studyInstanceUID`, `accessionNumber`, `patientID`, `patientName`, `modality`, `studyDate`, `studyDescription`, `receivingAE`, `sourceAE`, `timestamp` |
+| `study.received` | First instance of a new study is stored | `studyInstanceUID`, `accessionNumber`, `patientID`, `patientName`, `modality`, `studyDate`, `studyDescription`?, `receivingAE`, `sourceAE`, `timestamp` |
 | `study.updated` | Additional instances arrive for an existing study | `studyInstanceUID`, `accessionNumber`, `seriesCount`, `instanceCount`, `latestSeriesUID`, `sourceAE`, `timestamp` |
 | `study.complete` | Study completeness criteria met (configurable timer / instance count / MPPS completed) | `studyInstanceUID`, `accessionNumber`, `patientID`, `modality`, `seriesCount`, `instanceCount`, `studyStatus`, `timestamp` |
 | `study.available` | Study is available for retrieval (IAN equivalent) | `studyInstanceUID`, `accessionNumber`, `patientID`, `retrieveAE`, `retrieveURL` (DICOMweb), `availableTransferSyntaxes[]`, `timestamp` |
@@ -99,7 +99,7 @@ Mayam Server publishes lifecycle events via DICOM Instance Availability Notifica
 | `study.deleted` | Study permanently removed from all tiers | `studyInstanceUID`, `accessionNumber`, `patientID`, `deletionReason`, `deletedBy`, `timestamp` |
 | `study.error` | An error occurred during processing | `studyInstanceUID`, `accessionNumber`, `errorCode`, `errorMessage`, `stage` (ingest/route/archive/rehydrate), `timestamp` |
 
-**Webhook delivery:** JSON payloads over HTTPS POST with HMAC-SHA256 signature verification; configurable retry with exponential back-off; subscription management via the Admin API.
+**Webhook delivery:** JSON payloads over HTTPS POST with HMAC-SHA256 signature verification (per-subscription shared secret with key rotation support); configurable retry with exponential back-off; subscription management via the Admin API. Fields marked with `?` are nullable and may be absent when the triggering event occurs before the attribute is available (e.g., `studyDescription` may not be present until subsequent instances arrive).
 
 ### Image Compression
 
