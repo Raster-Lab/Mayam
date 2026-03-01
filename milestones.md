@@ -270,6 +270,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 - Write the **Administrator Guide** — installation, configuration, LDAP setup, backup, upgrades.
 - Write the **API Reference** — OpenAPI/Swagger specs for Admin API and DICOMweb endpoints.
 - Write the **Deployment Guide** — bare-metal macOS, bare-metal Linux, Docker, Docker Compose.
+- **macOS Installer** — distribute a downloadable `.dmg` disk image containing a `.pkg` installer with all dependencies bundled (including LDAP libraries); one-click installation with no additional setup required.
 - Publish **Homebrew formula** (macOS) and **APT/RPM packages** (Linux).
 - Create the project website and release notes.
 - Tag **v1.0.0** release.
@@ -294,7 +295,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 | 12 | Security Hardening & IHE Compliance | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
 | 13 | Monitoring, Metrics & Operations | Prometheus, Docker, systemd, health checks |
 | 14 | Performance Optimisation | Benchmarks, tuning, stress testing |
-| 15 | Documentation, Packaging & Release | Conformance statement, guides, v1.0.0 |
+| 15 | Documentation, Packaging & Release | Conformance statement, guides, macOS DMG/PKG installer, Homebrew, APT/RPM, v1.0.0 |
 
 ---
 

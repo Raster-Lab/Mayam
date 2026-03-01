@@ -167,6 +167,7 @@ Leveraging Raster-Lab's native Swift codecs for best-in-class performance on App
 ### Deployment & Operations
 
 - **Single-Binary Distribution** — One executable; no JVM, no container runtime required.
+- **macOS DMG/PKG Installer** — Downloadable `.dmg` disk image containing a `.pkg` installer with all dependencies bundled (including LDAP libraries); one-click installation with no additional setup required.
 - **Docker & OCI Images** — Official container images for orchestrated deployments.
 - **macOS Native** — Runs as a launchd service; optional menu-bar status app.
 - **Linux Systemd** — Service unit file included for production Linux deployments.
