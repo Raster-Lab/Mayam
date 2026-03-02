@@ -12,9 +12,14 @@ import MayamCore
 /// - **UPS-RS** — Unified Procedure Step workitem management.
 /// - **WADO-URI** — Legacy single-frame retrieval for backward compatibility.
 ///
-/// > Note: The Admin API is part of Milestone 7.
+/// ## Admin API (Milestone 7)
+/// - **AdminServer** — HTTP server for the web administration console.
+/// - **AdminRouter** — Request routing for all `/admin/api/` endpoints.
+/// - Authentication via HS256 JWT bearer tokens.
+/// - DICOM node management, storage pool reporting, integrity checking.
+/// - First-run setup wizard and server settings management.
 public enum MayamWeb {
     /// The current version of the MayamWeb module.
-    public static let version = "0.6.0"
+    public static let version = "0.7.0"
 }
 

@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: (see LICENSE)
+// Mayam — Admin Storage Handler
+
+import Foundation
+import MayamCore
+
+// MARK: - AdminStorageHandler
+
+/// Provides storage pool information and archive integrity checking.
+///
+/// Storage statistics are derived from the file-system volume that hosts the
+/// archive path.  The integrity check is a basic walk of the archive directory
+/// tree that counts `.dcm` files; deep validation of DICOM data is a future
+/// enhancement.
+public actor AdminStorageHandler {
+
+    // MARK: - Initialiser
+
+    /// Creates a new storage handler.
+    public init() {}
+
+    // MARK: - Public Methods
+
+    /// Returns a list of storage pools visible to the archive.
+    ///
+    /// Currently returns a single pool for the configured archive path.
+    /// Multi-pool and nearline-tier support is planned for a future milestone.
+    ///
+    /// - Parameter archivePath: Root path of the DICOM archive.
+    /// - Returns: An array of ``StoragePool`` descriptors.
+    public func getStoragePools(archivePath: String) async -> [StoragePool] {
+        var totalBytes: Int64 = 0
+        var freeBytes: Int64 = 0
+
+        let url = URL(fileURLWithPath: archivePath)
+        if let resourceValues = try? url.resourceValues(forKeys: [
+            .volumeTotalCapacityKey,
+            .volumeAvailableCapacityKey
+        ]) {
+            totalBytes = resourceValues.volumeTotalCapacity.map { Int64($0) } ?? 0
+            freeBytes = resourceValues.volumeAvailableCapacity.map { Int64($0) } ?? 0
+        }
+
+        let usedBytes = totalBytes - freeBytes
+        let pool = StoragePool(
+            name: "Primary Archive",
+            path: archivePath,
+            totalBytes: totalBytes,
+            usedBytes: usedBytes,
+            freeBytes: freeBytes,
+            tier: "online"
+        )
+        return [pool]
+    }
+
+    /// Runs a basic integrity check over the archive directory.
+    ///
+    /// Walks the archive directory tree and counts `.dcm` files.  Deep DICOM
+    /// data validation (checksum verification, tag completeness) is planned
+    /// for a future milestone.
+    ///
+    /// - Parameter archivePath: Root path of the DICOM archive.
+    /// - Returns: An ``IntegrityCheckResult`` with the count of examined files.
+    public func runIntegrityCheck(archivePath: String) async -> IntegrityCheckResult {
+        let startedAt = Date()
+        let fileManager = FileManager.default
+        var checkedCount = 0
+
+        if let enumerator = fileManager.enumerator(atPath: archivePath) {
+            for case let filePath as String in enumerator
+            where filePath.hasSuffix(".dcm") {
+                checkedCount += 1
+            }
+        }
+
+        return IntegrityCheckResult(
+            startedAt: startedAt,
+            completedAt: Date(),
+            checkedCount: checkedCount,
+            errorCount: 0,
+            status: "complete"
+        )
+    }
+}

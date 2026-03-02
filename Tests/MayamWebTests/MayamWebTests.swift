@@ -7,6 +7,6 @@ import XCTest
 final class MayamWebTests: XCTestCase {
 
     func test_mayamWeb_version_isSet() {
-        XCTAssertEqual(MayamWeb.version, "0.6.0")
+        XCTAssertEqual(MayamWeb.version, "0.7.0")
     }
 }
