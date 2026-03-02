@@ -57,12 +57,18 @@ public struct ServerConfiguration: Sendable, Equatable {
         /// Whether to enable SHA-256 integrity checksums on ingest.
         public var checksumEnabled: Bool
 
+        /// Storage policy governing ingest behaviour, duplicate handling, and
+        /// near-line migration triggers.
+        public var policy: StoragePolicy
+
         public init(
             archivePath: String = "/var/lib/mayam/archive",
-            checksumEnabled: Bool = true
+            checksumEnabled: Bool = true,
+            policy: StoragePolicy = .default
         ) {
             self.archivePath = archivePath
             self.checksumEnabled = checksumEnabled
+            self.policy = policy
         }
     }
 
@@ -133,13 +139,14 @@ extension ServerConfiguration.DICOM: Codable {
 
 extension ServerConfiguration.Storage: Codable {
     enum CodingKeys: String, CodingKey {
-        case archivePath, checksumEnabled
+        case archivePath, checksumEnabled, policy
     }
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.archivePath = try container.decodeIfPresent(String.self, forKey: .archivePath) ?? "/var/lib/mayam/archive"
         self.checksumEnabled = try container.decodeIfPresent(Bool.self, forKey: .checksumEnabled) ?? true
+        self.policy = try container.decodeIfPresent(StoragePolicy.self, forKey: .policy) ?? .default
     }
 }
 

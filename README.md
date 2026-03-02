@@ -335,8 +335,10 @@ Mayam/
 │   │   ├── Database/
 │   │   │   └── Migrations/   # PostgreSQL schema migrations
 │   │   ├── DICOM/            # DICOM networking (NIO listener, association, SCP/SCU)
+│   │   │                     # Includes StorageSCP (C-STORE receiver) and StorageSCU (C-STORE sender)
 │   │   ├── Logging/          # Cross-platform logging subsystem
-│   │   └── Models/           # Patient, Study, Accession, etc.
+│   │   ├── Models/           # Patient, Study, Accession, Series, Instance, StoragePolicy, etc.
+│   │   └── Storage/          # StorageLayout (on-disk hierarchy), StudyArchiver (ZIP/TAR+Zstd)
 │   ├── MayamWeb/             # DICOMweb & Admin REST API
 │   ├── MayamAdmin/           # Web console static assets
 │   └── MayamCLI/             # Command-line administration tools

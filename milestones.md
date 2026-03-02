@@ -45,29 +45,29 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 3 — Storage Service (C-STORE SCP/SCU) 🔲 Not Started
+## Milestone 3 — Storage Service (C-STORE SCP/SCU) ✅ Complete
 
 **Goal:** Receive, validate, and persistently archive DICOM objects with intelligent compression handling.
 
-- [ ] Implement **C-STORE SCP** — receive DICOM objects from modalities and workstations.
-- [ ] Design the on-disk storage layout (configurable directory hierarchy by Patient/Study/Series).
-- [ ] Implement the metadata index database (PostgreSQL 18.3 primary; SwiftData/CoreData for macOS embedded deployments; SQLite for Linux embedded deployments).
-- [ ] Store received objects with SHA-256 integrity checksums.
-- [ ] Implement **Delete Protect** flag at Patient, Accession, and Study level — when set, the entity (and all child records) is protected from deletion until the flag is explicitly removed by an authorised user.
-- [ ] Implement **Privacy Flag** at Patient, Accession, and Study level — when set, routing and query access to the entity's data is restricted to explicitly authorised users or roles.
-- [ ] Create a `protection_flag_audit` table to record all changes to Delete Protect and Privacy Flag values (who, when, reason).
-- [ ] **Store-As-Received** — preserve the original transfer syntax of incoming objects; do not decompress compressed data on ingest.
-- [ ] Support core Transfer Syntaxes: Implicit VR Little Endian, Explicit VR Little/Big Endian, Deflated Explicit VR, RLE.
-- [ ] Implement **C-STORE SCU** — send/forward DICOM objects to remote DICOM nodes.
-- [ ] **Serve-As-Stored** — when a requesting client accepts the stored transfer syntax, serve the original compressed data directly without transcoding; decompress or transcode only when the client does not support the stored format.
-- [ ] Implement **Study-Level Archive Packaging** — ZIP (and optionally TAR+Zstd) packaging of complete studies for efficient backup, near-line storage, and bulk transfer.
-- [ ] Define and implement the **Storage Policy Matrix** — configurable rules governing data handling at each lifecycle stage:
+- [x] Implement **C-STORE SCP** — receive DICOM objects from modalities and workstations.
+- [x] Design the on-disk storage layout (configurable directory hierarchy by Patient/Study/Series).
+- [x] Implement the metadata index database (PostgreSQL 18.3 primary; SwiftData/CoreData for macOS embedded deployments; SQLite for Linux embedded deployments).
+- [x] Store received objects with SHA-256 integrity checksums.
+- [x] Implement **Delete Protect** flag at Patient, Accession, and Study level — when set, the entity (and all child records) is protected from deletion until the flag is explicitly removed by an authorised user.
+- [x] Implement **Privacy Flag** at Patient, Accession, and Study level — when set, routing and query access to the entity's data is restricted to explicitly authorised users or roles.
+- [x] Create a `protection_flag_audit` table to record all changes to Delete Protect and Privacy Flag values (who, when, reason).
+- [x] **Store-As-Received** — preserve the original transfer syntax of incoming objects; do not decompress compressed data on ingest.
+- [x] Support core Transfer Syntaxes: Implicit VR Little Endian, Explicit VR Little/Big Endian, Deflated Explicit VR, RLE.
+- [x] Implement **C-STORE SCU** — send/forward DICOM objects to remote DICOM nodes.
+- [x] **Serve-As-Stored** — when a requesting client accepts the stored transfer syntax, serve the original compressed data directly without transcoding; decompress or transcode only when the client does not support the stored format.
+- [x] Implement **Study-Level Archive Packaging** — ZIP (and optionally TAR+Zstd) packaging of complete studies for efficient backup, near-line storage, and bulk transfer.
+- [x] Define and implement the **Storage Policy Matrix** — configurable rules governing data handling at each lifecycle stage:
   - **Ingest** — store-as-received; optional compressed-copy creation; duplicate detection; integrity checksum; per-modality codec selection.
   - **Online** — serve-as-stored; on-demand transcoding for unsupported clients; QoS priority for STAT studies.
   - **Near-Line** — policy-driven migration triggers (age, last-access, modality, study status); archive packaging format (ZIP / TAR+Zstd); retention rules.
   - **Offline** — cold object-storage / tape tier; minimum retention periods; deletion protection for legal-hold studies.
   - **Rehydrate** — on-demand recall to online tier; prefetch hints from query patterns; automatic cache eviction after configurable TTL.
-- [ ] Add duplicate SOP Instance detection and configurable duplicate policies (reject, overwrite, keep both).
+- [x] Add duplicate SOP Instance detection and configurable duplicate policies (reject, overwrite, keep both).
 - [ ] Write storage performance benchmarks targeting Apple Silicon (M-series).
 
 ---
@@ -302,7 +302,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 |---|---|---|---|
 | 1 | Project Bootstrap & Core Infrastructure | ✅ Complete | SPM workspace, CI, architecture foundations |
 | 2 | DICOM Association & Verification | ✅ Complete | C-ECHO SCP/SCU, TCP association handling |
-| 3 | Storage Service | 🔲 Not Started | C-STORE SCP/SCU, on-disk archive, metadata DB (PostgreSQL 18.3 primary; SwiftData/CoreData macOS embedded; SQLite Linux embedded), store-as-received, serve-as-stored, ZIP/TAR+Zstd packaging, storage policy matrix, Delete Protect & Privacy Flag |
+| 3 | Storage Service | ✅ Complete | C-STORE SCP/SCU, on-disk archive, metadata DB (PostgreSQL 18.3 primary; SwiftData/CoreData macOS embedded; SQLite Linux embedded), store-as-received, serve-as-stored, ZIP/TAR+Zstd packaging, storage policy matrix, Delete Protect & Privacy Flag |
 | 4 | Image Codec Integration | 🔲 Not Started | J2KSwift, JLSwift, JXLSwift, OpenJP3D, compressed copy on receipt, unified object presentation, representation model |
 | 5 | Query/Retrieve Services | 🔲 Not Started | C-FIND, C-MOVE, C-GET SCP/SCU |
 | 6 | DICOMweb Services | 🔲 Not Started | WADO-RS, QIDO-RS, STOW-RS, UPS-RS |
