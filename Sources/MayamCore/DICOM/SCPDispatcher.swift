@@ -92,6 +92,10 @@ public final class SCPDispatcher: Sendable {
     /// The Get SCP (C-GET) handler — present when get retrieval is configured.
     private let getSCP: GetSCP?
 
+    /// The Storage Commitment SCP (N-ACTION/N-EVENT-REPORT) handler —
+    /// present when storage commitment is configured.
+    private let storageCommitmentSCP: StorageCommitmentSCP?
+
     // MARK: - Initialiser
 
     /// Creates a new SCP dispatcher.
@@ -103,18 +107,22 @@ public final class SCPDispatcher: Sendable {
     ///   - queryRetrieveSCP: Optional Query/Retrieve SCP for handling C-FIND requests.
     ///   - retrieveSCP: Optional Retrieve SCP for handling C-MOVE requests.
     ///   - getSCP: Optional Get SCP for handling C-GET requests.
+    ///   - storageCommitmentSCP: Optional Storage Commitment SCP for handling
+    ///     N-ACTION/N-EVENT-REPORT requests.
     public init(
         services: [SCPService] = [],
         storageSCP: StorageSCP? = nil,
         queryRetrieveSCP: QueryRetrieveSCP? = nil,
         retrieveSCP: RetrieveSCP? = nil,
-        getSCP: GetSCP? = nil
+        getSCP: GetSCP? = nil,
+        storageCommitmentSCP: StorageCommitmentSCP? = nil
     ) {
         self.verificationSCP = VerificationSCP()
         self.storageSCP = storageSCP
         self.queryRetrieveSCP = queryRetrieveSCP
         self.retrieveSCP = retrieveSCP
         self.getSCP = getSCP
+        self.storageCommitmentSCP = storageCommitmentSCP
         self.services = services
     }
 
@@ -258,6 +266,27 @@ public final class SCPDispatcher: Sendable {
                 presentationContextID: presentationContextID
             )],
             dataSets: []
+        )
+    }
+
+    /// Handles an incoming Storage Commitment N-ACTION request.
+    ///
+    /// Routes to the configured ``StorageCommitmentSCP`` if present; otherwise
+    /// returns `nil`.
+    ///
+    /// - Parameters:
+    ///   - transactionUID: The Transaction UID for the commitment.
+    ///   - referencedInstances: The list of SOP instances to commit.
+    /// - Returns: A ``StorageCommitmentSCP/CommitmentResult``, or `nil` if
+    ///   storage commitment is not configured.
+    public func handleStorageCommitment(
+        transactionUID: String,
+        referencedInstances: [(sopClassUID: String, sopInstanceUID: String)]
+    ) async -> StorageCommitmentSCP.CommitmentResult? {
+        guard let scp = storageCommitmentSCP else { return nil }
+        return await scp.processCommitmentRequest(
+            transactionUID: transactionUID,
+            referencedInstances: referencedInstances
         )
     }
 }
