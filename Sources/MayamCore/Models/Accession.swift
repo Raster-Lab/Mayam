@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Accession Model
+// Mayam — Accession Model
 
 import Foundation
 

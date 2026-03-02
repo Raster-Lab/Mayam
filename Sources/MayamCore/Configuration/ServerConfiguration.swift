@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Configuration Model
+// Mayam — Configuration Model
 
 import Foundation
 

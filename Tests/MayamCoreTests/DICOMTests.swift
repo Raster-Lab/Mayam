@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — DICOM Component Tests
+// Mayam — DICOM Component Tests
 
 import XCTest
 import NIOCore

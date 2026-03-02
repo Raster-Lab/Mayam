@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — SCP Service Protocol & Dispatcher
+// Mayam — SCP Service Protocol & Dispatcher
 
 import Foundation
 import DICOMNetwork

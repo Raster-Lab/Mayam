@@ -1,10 +1,10 @@
-# Mayam Server
+# Mayam
 
 **A modern, clean-sheet PACS server built from the ground up in Swift.**
 
-Mayam Server is a departmental-level Picture Archiving and Communication System (PACS) designed for clinics, medium-sized hospitals, and veterinary practices. It is built entirely in Swift 6.2 with strict concurrency, optimised for Apple Silicon (M-series) processors, and fully cross-platform with first-class Linux support.
+Mayam is a departmental-level Picture Archiving and Communication System (PACS) designed for clinics, medium-sized hospitals, and veterinary practices. It is built entirely in Swift 6.2 with strict concurrency, optimised for Apple Silicon (M-series) processors, and fully cross-platform with first-class Linux support.
 
-Mayam Server follows the **DICOM Standard 2026a** (XML edition) and leverages the [Raster-Lab](https://github.com/Raster-Lab) family of frameworks—making it both a production-grade PACS and a showcase for these libraries.
+Mayam follows the **DICOM Standard 2026a** (XML edition) and leverages the [Raster-Lab](https://github.com/Raster-Lab) family of frameworks—making it both a production-grade PACS and a showcase for these libraries.
 
 ---
 
@@ -87,7 +87,7 @@ The server manages multiple derivative representations of each study, presented 
 
 #### RIS Event Catalog (IAN + Webhooks)
 
-Mayam Server publishes lifecycle events via DICOM Instance Availability Notification and equivalent RESTful webhooks. The following event catalog defines each event type and its payload:
+Mayam publishes lifecycle events via DICOM Instance Availability Notification and equivalent RESTful webhooks. The following event catalog defines each event type and its payload:
 
 | Event | Trigger | Key Payload Fields |
 |---|---|---|
@@ -219,8 +219,8 @@ Leveraging Raster-Lab's native Swift codecs for best-in-class performance on App
 
 ```bash
 # Clone and build
-git clone https://github.com/Raster-Lab/Mayam-Server.git
-cd Mayam-Server
+git clone https://github.com/Raster-Lab/Mayam.git
+cd Mayam
 swift build
 
 # Build in release mode
@@ -231,7 +231,7 @@ swift build -c release
 
 ```bash
 # Run the server (uses Config/mayam.yaml or defaults)
-swift run mayam-server
+swift run mayam
 
 # Run the CLI tools
 swift run mayam-cli config validate Config/mayam.yaml
@@ -249,7 +249,7 @@ swift test --enable-code-coverage
 
 ### Configuration
 
-Mayam Server uses a layered configuration system:
+Mayam uses a layered configuration system:
 
 1. **Built-in defaults** — sensible defaults for all settings.
 2. **YAML configuration file** — `Config/mayam.yaml` (or set `MAYAM_CONFIG` environment variable to a custom path).
@@ -268,7 +268,7 @@ Mayam Server uses a layered configuration system:
 
 ## Architecture Overview
 
-Mayam Server uses **Swift structured concurrency** with an actor-based architecture to eliminate data races:
+Mayam uses **Swift structured concurrency** with an actor-based architecture to eliminate data races:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -326,7 +326,7 @@ Mayam Server uses **Swift structured concurrency** with an actor-based architect
 ## Project Structure
 
 ```
-Mayam-Server/
+Mayam/
 ├── Sources/
 │   ├── MayamServer/          # Main server entry point
 │   ├── MayamCore/            # Core PACS engine, storage, DICOM services
@@ -380,4 +380,4 @@ This project is licensed under the terms specified in the repository. See `LICEN
 
 ---
 
-*Mayam Server is a [Raster-Lab](https://github.com/Raster-Lab) project.*
+*Mayam is a [Raster-Lab](https://github.com/Raster-Lab) project.*

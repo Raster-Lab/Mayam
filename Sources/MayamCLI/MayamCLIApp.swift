@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Command-Line Interface
+// Mayam — Command-Line Interface
 
 import MayamCore
 import Foundation
 
-/// Mayam CLI — command-line administration tools for Mayam Server.
+/// Mayam CLI — command-line administration tools for Mayam.
 ///
 /// ## Planned Commands
 /// - `mayam-cli status` — display server health.

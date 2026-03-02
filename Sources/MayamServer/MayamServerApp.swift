@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Main Entry Point
+// Mayam — Main Entry Point
 
 import MayamCore
 import Foundation
 
-/// Mayam Server application entry point.
+/// Mayam application entry point.
 ///
 /// Loads the server configuration, initialises the logging subsystem, and starts
 /// the PACS server actor.
@@ -15,7 +15,7 @@ struct MayamServerApp {
         MayamLogger.bootstrap()
         let logger = MayamLogger(label: "com.raster-lab.mayam.server")
 
-        logger.info("Mayam Server starting…")
+        logger.info("Mayam starting…")
 
         // Load configuration
         let config: ServerConfiguration

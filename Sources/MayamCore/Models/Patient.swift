@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Patient Model
+// Mayam — Patient Model
 
 import Foundation
 

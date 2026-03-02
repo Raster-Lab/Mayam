@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — DICOM Association Handler
+// Mayam — DICOM Association Handler
 
 import Foundation
 import NIOCore

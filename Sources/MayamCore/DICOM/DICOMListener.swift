@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — DICOM TCP Listener (Swift NIO)
+// Mayam — DICOM TCP Listener (Swift NIO)
 
 import Foundation
 import NIOCore

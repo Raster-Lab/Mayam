@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Server Actor
+// Mayam — Server Actor
 
 import Logging
 

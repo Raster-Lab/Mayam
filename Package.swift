@@ -1,18 +1,18 @@
 // swift-tools-version: 6.0
 
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Swift Package Manager Manifest
+// Mayam — Swift Package Manager Manifest
 
 import PackageDescription
 
 let package = Package(
-    name: "MayamServer",
+    name: "Mayam",
     platforms: [
         .macOS(.v15)
     ],
     products: [
         .executable(
-            name: "mayam-server",
+            name: "mayam",
             targets: ["MayamServer"]
         ),
         .library(

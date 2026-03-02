@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Configuration Tests
+// Mayam — Configuration Tests
 
 import XCTest
 @testable import MayamCore

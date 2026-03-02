@@ -1,6 +1,6 @@
-# Mayam Server — Development Milestones
+# Mayam — Development Milestones
 
-This document defines the phased roadmap for Mayam Server. Each milestone is a self-contained deliverable that can be tested and validated independently before moving to the next phase.
+This document defines the phased roadmap for Mayam. Each milestone is a self-contained deliverable that can be tested and validated independently before moving to the next phase.
 
 > **Standard:** DICOM 2026a (XML edition)
 > **Language:** Swift 6.2 with strict concurrency
@@ -210,15 +210,15 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 
 > **HL7kit availability note (as of February 2026):**
 >
-> The following capabilities required by Mayam Server are **already available** in HL7kit:
+> The following capabilities required by Mayam are **already available** in HL7kit:
 > - HL7 v2.x MLLP client/server, ADT/ORM/ORU/ACK message types, validation, and TLS networking (`HL7v2Kit`)
 > - FHIR R4 `Patient` resource, `DiagnosticReport` resource, data model, REST client, search, validation, SMART on FHIR auth, terminology services, and subscriptions (`FHIRkit`)
 >
-> The following FHIR R4 resources required by Mayam Server are **not yet implemented** in HL7kit and must be added to HL7kit's `FHIRkit` module **before** this milestone can be completed:
+> The following FHIR R4 resources required by Mayam are **not yet implemented** in HL7kit and must be added to HL7kit's `FHIRkit` module **before** this milestone can be completed:
 > - `ImagingStudy` — needed to expose DICOM studies as FHIR resources.
 > - `Endpoint` — needed for FHIR endpoint discovery for DICOMweb URLs.
 
-- [ ] **Prerequisite:** Contribute `ImagingStudy` and `Endpoint` FHIR R4 resource implementations to [HL7kit's FHIRkit module](https://github.com/Raster-Lab/HL7kit/tree/main/Sources/FHIRkit) before starting Mayam Server integration.
+- [ ] **Prerequisite:** Contribute `ImagingStudy` and `Endpoint` FHIR R4 resource implementations to [HL7kit's FHIRkit module](https://github.com/Raster-Lab/HL7kit/tree/main/Sources/FHIRkit) before starting Mayam integration.
 - [ ] Implement an **HL7 v2.x MLLP listener** using HL7kit's `HL7v2Kit` module for ADT (patient demographics), ORM (orders), and ORU (results) messages.
 - [ ] Implement **HL7 FHIR R4** resource endpoints using HL7kit's `FHIRkit` module:
   - `ImagingStudy` — expose studies as FHIR resources (requires HL7kit `FHIRkit` addition).

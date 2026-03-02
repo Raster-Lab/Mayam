@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — MayamAdmin Module
+// Mayam — MayamAdmin Module
 
 import Foundation
 

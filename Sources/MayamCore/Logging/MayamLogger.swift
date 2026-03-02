@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Logging Subsystem
+// Mayam — Logging Subsystem
 
 import Logging
 import Foundation
 
-/// Cross-platform logging facade for Mayam Server.
+/// Cross-platform logging facade for Mayam.
 ///
 /// On all platforms the subsystem uses `swift-log` (`Logging` module).
 /// The default bootstrap configures `StreamLogHandler` (stderr).

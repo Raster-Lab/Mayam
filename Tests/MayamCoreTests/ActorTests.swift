@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Actor Tests
+// Mayam — Actor Tests
 
 import XCTest
 @testable import MayamCore

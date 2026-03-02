@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Study Model
+// Mayam — Study Model
 
 import Foundation
 

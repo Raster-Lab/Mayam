@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Association Actor
+// Mayam — Association Actor
 
 import Foundation
 
-/// Manages a single DICOM association between Mayam Server and a remote
+/// Manages a single DICOM association between Mayam and a remote
 /// DICOM application entity.
 ///
 /// Each inbound TCP connection produces one `AssociationActor`.  The actor

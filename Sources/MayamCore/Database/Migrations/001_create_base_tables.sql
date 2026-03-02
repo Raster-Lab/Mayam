@@ -1,4 +1,4 @@
--- Mayam Server — PostgreSQL 18.3 Base Schema Migration
+-- Mayam — PostgreSQL 18.3 Base Schema Migration
 -- Migration: 001_create_base_tables
 -- Description: Creates the core Patient, Accession, and Study tables
 --              with Delete Protect and Privacy Flag support.

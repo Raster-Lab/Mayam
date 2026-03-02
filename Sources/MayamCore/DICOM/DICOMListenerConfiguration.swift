@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — DICOM Listener Configuration
+// Mayam — DICOM Listener Configuration
 
 import Foundation
 import DICOMNetwork
@@ -48,10 +48,10 @@ public struct DICOMListenerConfiguration: Sendable, Equatable {
 
     // MARK: - Constants
 
-    /// Default Implementation Class UID for Mayam Server.
+    /// Default Implementation Class UID for Mayam.
     public static let defaultImplementationClassUID = "1.2.826.0.1.3680043.9.7433.2.1"
 
-    /// Default Implementation Version Name for Mayam Server.
+    /// Default Implementation Version Name for Mayam.
     public static let defaultImplementationVersionName = "MAYAM_001"
 
     /// Default maximum PDU size (16 KB).

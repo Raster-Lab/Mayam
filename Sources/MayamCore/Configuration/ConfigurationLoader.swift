@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — YAML Configuration Loader
+// Mayam — YAML Configuration Loader
 
 import Foundation
 import Yams

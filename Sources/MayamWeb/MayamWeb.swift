@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — MayamWeb Module
+// Mayam — MayamWeb Module
 
 import MayamCore
 

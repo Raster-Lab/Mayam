@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — PDU Frame Decoder (NIO Channel Handler)
+// Mayam — PDU Frame Decoder (NIO Channel Handler)
 
 import Foundation
 import NIOCore

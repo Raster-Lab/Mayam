@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Configuration Errors
+// Mayam — Configuration Errors
 
 import Foundation
 

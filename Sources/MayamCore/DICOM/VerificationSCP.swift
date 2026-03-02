@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Verification SCP (C-ECHO Service Class Provider)
+// Mayam — Verification SCP (C-ECHO Service Class Provider)
 
 import Foundation
 import DICOMNetwork

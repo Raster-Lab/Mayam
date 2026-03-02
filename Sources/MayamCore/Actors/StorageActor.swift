@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Storage Actor
+// Mayam — Storage Actor
 
 import Foundation
 

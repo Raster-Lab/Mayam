@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (see LICENSE)
-// Mayam Server — Verification SCU (C-ECHO Service Class User)
+// Mayam — Verification SCU (C-ECHO Service Class User)
 
 import Foundation
 import NIOCore
