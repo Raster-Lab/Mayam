@@ -59,17 +59,28 @@ public struct DICOMListenerConfiguration: Sendable, Equatable {
 
     /// Default SOP Classes accepted by the server.
     ///
-    /// Initially includes only the Verification SOP Class (C-ECHO).
-    /// Additional SOP Classes (C-STORE, C-FIND, etc.) will be added in
-    /// subsequent milestones.
-    public static let defaultAcceptedSOPClasses: Set<String> = [
-        verificationSOPClassUID  // "1.2.840.10008.1.1"
-    ]
+    /// Includes the Verification SOP Class (C-ECHO) and all common Storage
+    /// SOP Classes (C-STORE) defined by `DICOMNetwork.StorageSCPConfiguration`.
+    public static let defaultAcceptedSOPClasses: Set<String> = {
+        var classes = StorageSCPConfiguration.commonStorageSOPClasses
+        classes.insert(verificationSOPClassUID)  // "1.2.840.10008.1.1"
+        return classes
+    }()
 
     /// Default transfer syntaxes accepted by the server.
+    ///
+    /// Includes the four core transfer syntaxes required by Milestone 3:
+    /// - Implicit VR Little Endian (1.2.840.10008.1.2)
+    /// - Explicit VR Little Endian (1.2.840.10008.1.2.1)
+    /// - Explicit VR Big Endian, retired (1.2.840.10008.1.2.2)
+    /// - Deflated Explicit VR Little Endian (1.2.840.10008.1.2.1.99)
+    /// - RLE Lossless (1.2.840.10008.1.2.5)
     public static let defaultAcceptedTransferSyntaxes: Set<String> = [
-        implicitVRLittleEndianTransferSyntaxUID,   // "1.2.840.10008.1.2"
-        explicitVRLittleEndianTransferSyntaxUID     // "1.2.840.10008.1.2.1"
+        implicitVRLittleEndianTransferSyntaxUID,    // "1.2.840.10008.1.2"
+        explicitVRLittleEndianTransferSyntaxUID,    // "1.2.840.10008.1.2.1"
+        "1.2.840.10008.1.2.2",                     // Explicit VR Big Endian (retired)
+        "1.2.840.10008.1.2.1.99",                  // Deflated Explicit VR Little Endian
+        "1.2.840.10008.1.2.5"                      // RLE Lossless
     ]
 
     // MARK: - Initialiser

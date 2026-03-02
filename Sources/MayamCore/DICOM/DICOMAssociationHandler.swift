@@ -264,12 +264,46 @@ public final class DICOMAssociationHandler: ChannelInboundHandler, @unchecked Se
         }
 
         let contextID = message.presentationContextID
+        let transferSyntax = acceptedContexts[contextID]?.transferSyntax
+            ?? implicitVRLittleEndianTransferSyntaxUID
 
         switch command {
         case .cEchoRequest:
             if let request = message.asCEchoRequest() {
                 let response = dispatcher.handleCEcho(request: request, presentationContextID: contextID)
                 try sendDIMSEResponse(response, presentationContextID: contextID, context: context)
+            }
+
+        case .cStoreRequest:
+            if let request = message.asCStoreRequest() {
+                let dataSet = message.dataSet ?? Data()
+                let ts = transferSyntax
+                let maxPDU = negotiatedMaxPDUSize
+                // Capture the channel (Sendable) rather than the context (non-Sendable)
+                let channel = context.channel
+                Task {
+                    let response = await self.dispatcher.handleCStore(
+                        request: request,
+                        dataSet: dataSet,
+                        transferSyntax: ts,
+                        presentationContextID: contextID
+                    )
+                    channel.eventLoop.execute {
+                        let fragmenter = MessageFragmenter(maxPDUSize: maxPDU)
+                        let pdus = fragmenter.fragmentMessage(
+                            commandSet: response.commandSet,
+                            dataSet: nil,
+                            presentationContextID: contextID
+                        )
+                        for pdu in pdus {
+                            if let encoded = try? pdu.encode() {
+                                var outBuffer = channel.allocator.buffer(capacity: encoded.count)
+                                outBuffer.writeBytes(encoded)
+                                channel.writeAndFlush(outBuffer, promise: nil)
+                            }
+                        }
+                    }
+                }
             }
 
         default:
