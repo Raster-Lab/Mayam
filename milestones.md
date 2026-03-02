@@ -128,22 +128,22 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 7 — Web Administration Console 🔲 Not Started
+## Milestone 7 — Web Administration Console ✅ Complete
 
 **Goal:** Deliver a responsive web-based administration interface.
 
-- [ ] Design and implement the **RESTful Admin API** as a separate, documented endpoint group.
-- [ ] Implement authentication and session management for the admin API (JWT tokens backed by LDAP).
-- [ ] Build the **Web Console** frontend:
+- [x] Design and implement the **RESTful Admin API** as a separate, documented endpoint group.
+- [x] Implement authentication and session management for the admin API (JWT tokens backed by LDAP).
+- [x] Build the **Web Console** frontend:
   - Dashboard — server status, storage utilisation, association metrics, recent activity.
   - DICOM Node Manager — add, edit, delete, and verify (C-ECHO) remote AE Titles.
   - Storage Manager — view storage pools, utilisation, near-line status, and run integrity checks.
   - Log Viewer — filterable, searchable audit and application logs.
   - Transfer Syntax / Compression Policy editor.
   - System Settings — AE Title, ports, TLS certificates, LDAP connection, backup schedules.
-- [ ] Ensure full mobile/tablet responsiveness.
-- [ ] Ensure every admin action is available via the REST API (for future native App/GUI tools).
-- [ ] Add first-run **Setup Wizard** for guided initial configuration.
+- [x] Ensure full mobile/tablet responsiveness.
+- [x] Ensure every admin action is available via the REST API (for future native App/GUI tools).
+- [x] Add first-run **Setup Wizard** for guided initial configuration.
 
 ---
 
@@ -310,7 +310,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 4 | Image Codec Integration | ✅ Complete | J2KSwift, JLSwift, JXLSwift, OpenJP3D, compressed copy on receipt, unified object presentation, representation model |
 | 5 | Query/Retrieve Services | ✅ Complete | C-FIND, C-MOVE, C-GET SCP/SCU, query performance indexes |
 | 6 | DICOMweb Services | 🔲 Not Started | WADO-RS, QIDO-RS, STOW-RS, UPS-RS |
-| 7 | Web Administration Console | 🔲 Not Started | Admin REST API, responsive web UI, setup wizard |
+| 7 | Web Administration Console | ✅ Complete | Admin REST API (JWT auth, CRUD nodes, storage, logs, settings, setup wizard), responsive web console SPA |
 | 8 | User Management & LDAP | 🔲 Not Started | LDAP auth, RBAC, DICOM LDAP configuration |
 | 9 | Near-Line Storage & Backup | 🔲 Not Started | HSM, storage commitment, backup & recovery |
 | 10 | Worklist, MPPS & Workflow | 🔲 Not Started | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |

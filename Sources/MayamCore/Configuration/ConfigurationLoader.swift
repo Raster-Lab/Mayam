@@ -76,6 +76,12 @@ public enum ConfigurationLoader: Sendable {
     /// - `MAYAM_STORAGE_ARCHIVE_PATH` → ``ServerConfiguration/Storage/archivePath``
     /// - `MAYAM_STORAGE_CHECKSUM_ENABLED` → ``ServerConfiguration/Storage/checksumEnabled``
     /// - `MAYAM_LOG_LEVEL` → ``ServerConfiguration/Log/level``
+    /// - `MAYAM_ADMIN_PORT` → ``ServerConfiguration/Admin/port``
+    /// - `MAYAM_ADMIN_TLS_ENABLED` → ``ServerConfiguration/Admin/tlsEnabled``
+    /// - `MAYAM_ADMIN_TLS_CERTIFICATE_PATH` → ``ServerConfiguration/Admin/tlsCertificatePath``
+    /// - `MAYAM_ADMIN_TLS_KEY_PATH` → ``ServerConfiguration/Admin/tlsKeyPath``
+    /// - `MAYAM_ADMIN_JWT_SECRET` → ``ServerConfiguration/Admin/jwtSecret``
+    /// - `MAYAM_ADMIN_SESSION_EXPIRY_SECONDS` → ``ServerConfiguration/Admin/sessionExpirySeconds``
     static func applyEnvironmentOverrides(_ config: inout ServerConfiguration) {
         let env = ProcessInfo.processInfo.environment
 
@@ -107,6 +113,25 @@ public enum ConfigurationLoader: Sendable {
         }
         if let logLevel = env["MAYAM_LOG_LEVEL"] {
             config.log.level = logLevel
+        }
+        if let portString = env["MAYAM_ADMIN_PORT"], let port = Int(portString) {
+            config.admin.port = port
+        }
+        if let tlsString = env["MAYAM_ADMIN_TLS_ENABLED"] {
+            config.admin.tlsEnabled = tlsString.lowercased() == "true" || tlsString == "1"
+        }
+        if let certPath = env["MAYAM_ADMIN_TLS_CERTIFICATE_PATH"] {
+            config.admin.tlsCertificatePath = certPath
+        }
+        if let keyPath = env["MAYAM_ADMIN_TLS_KEY_PATH"] {
+            config.admin.tlsKeyPath = keyPath
+        }
+        if let jwtSecret = env["MAYAM_ADMIN_JWT_SECRET"] {
+            config.admin.jwtSecret = jwtSecret
+        }
+        if let expiryString = env["MAYAM_ADMIN_SESSION_EXPIRY_SECONDS"],
+           let expiry = Int(expiryString) {
+            config.admin.sessionExpirySeconds = expiry
         }
     }
 }

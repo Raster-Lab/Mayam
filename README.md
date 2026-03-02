@@ -237,6 +237,14 @@ swift run mayam
 swift run mayam-cli config validate Config/mayam.yaml
 ```
 
+Once the server is running, the **Admin Console** is accessible at:
+
+```
+http://localhost:8081/admin/
+```
+
+Default credentials: username `admin`, password `admin`. Change these immediately in `Config/mayam.yaml` or via the Settings page.
+
 ### Testing
 
 ```bash
@@ -263,6 +271,27 @@ Mayam uses a layered configuration system:
    - `MAYAM_STORAGE_ARCHIVE_PATH` — archive directory path
    - `MAYAM_STORAGE_CHECKSUM_ENABLED` — enable/disable SHA-256 checksums (`true`/`false`)
    - `MAYAM_LOG_LEVEL` — log level (`trace`, `debug`, `info`, `notice`, `warning`, `error`, `critical`)
+   - `MAYAM_ADMIN_PORT` — Admin Console HTTP port (default: `8081`)
+   - `MAYAM_ADMIN_JWT_SECRET` — secret key used to sign and verify JWT tokens for the Admin API
+   - `MAYAM_ADMIN_SESSION_EXPIRY_SECONDS` — JWT session lifetime in seconds (default: `3600`)
+   - `MAYAM_ADMIN_TLS_ENABLED` — enable/disable TLS for the Admin Console (`true`/`false`)
+
+### Admin Console Configuration
+
+The `admin:` block in `Config/mayam.yaml` controls the web administration interface:
+
+```yaml
+admin:
+  port: 8081                          # TCP port for the Admin Console HTTP(S) server
+  jwtSecret: "change-me-in-prod"      # Secret used to sign Admin API JWT tokens — must be changed in production
+  sessionExpirySeconds: 3600          # JWT token lifetime in seconds (default: 1 hour)
+  setupCompleted: false               # Set to true once the Setup Wizard has been completed
+  tlsEnabled: false                   # Enable TLS for the Admin Console
+  tlsCertificatePath: ""              # Path to TLS certificate (PEM) when tlsEnabled is true
+  tlsKeyPath: ""                      # Path to TLS private key (PEM) when tlsEnabled is true
+```
+
+> **Security note:** Always set a strong, random `jwtSecret` in production. The default value must not be used in any environment accessible from a network.
 
 ---
 
@@ -309,7 +338,8 @@ Mayam uses **Swift structured concurrency** with an actor-based architecture to 
 ├─────────────────────────────────────────────────────┤
 │  MayamWeb          MayamAdmin        MayamCLI       │
 │  (DICOMweb/        (Web Console      (CLI           │
-│   Admin API)        Assets)           Tools)        │
+│   Admin API)        Assets served     Tools)        │
+│                     by AdminServer)                  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -344,7 +374,7 @@ Mayam/
 │   │   └── Storage/          # StorageLayout (on-disk hierarchy), StudyArchiver (ZIP/TAR+Zstd),
 │   │                         # CompressedCopyManager (compressed copy on receipt, batch transcoding)
 │   ├── MayamWeb/             # DICOMweb & Admin REST API
-│   ├── MayamAdmin/           # Web console static assets
+│   ├── MayamAdmin/           # Web console static assets (single-page app served by AdminServer at /admin/)
 │   └── MayamCLI/             # Command-line administration tools
 ├── Tests/
 │   ├── MayamCoreTests/       # Core unit tests

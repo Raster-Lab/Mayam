@@ -2,10 +2,1289 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mayam — Administration Console</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --sidebar-bg: #1a2332;
+            --sidebar-hover: #243147;
+            --sidebar-active: #2196F3;
+            --sidebar-width: 240px;
+            --content-bg: #f5f7fa;
+            --accent: #2196F3;
+            --accent-dark: #1565C0;
+            --accent-light: #e3f2fd;
+            --danger: #e53935;
+            --danger-light: #ffebee;
+            --success: #43a047;
+            --success-light: #e8f5e9;
+            --warning: #fb8c00;
+            --warning-light: #fff3e0;
+            --text: #1a2332;
+            --text-secondary: #546e7a;
+            --border: #dde3ec;
+            --card-bg: #ffffff;
+            --header-h: 56px;
+            --radius: 8px;
+            --shadow: 0 2px 8px rgba(0,0,0,.08);
+            --shadow-lg: 0 4px 24px rgba(0,0,0,.12);
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        html, body { height: 100%; font-family: var(--font); font-size: 14px; color: var(--text); background: var(--content-bg); }
+
+        /* Layout */
+        #app { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        #sidebar {
+            width: var(--sidebar-width); min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            display: flex; flex-direction: column;
+            height: 100%; overflow-y: auto;
+            transition: transform .25s ease, width .25s ease;
+            z-index: 100;
+        }
+        #sidebar-logo { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        #sidebar-logo .logo-title { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+        #sidebar-logo .logo-sub { color: rgba(255,255,255,.45); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+        #sidebar-nav { flex: 1; padding: 12px 0; }
+        .nav-section-label { color: rgba(255,255,255,.35); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; padding: 16px 20px 6px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: rgba(255,255,255,.72); cursor: pointer; border-left: 3px solid transparent; transition: background .15s, color .15s, border-color .15s; user-select: none; text-decoration: none; }
+        .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+        .nav-item.active { background: rgba(33,150,243,.15); color: #fff; border-left-color: var(--accent); }
+        .nav-item .nav-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: .85; }
+        .nav-item .nav-label { font-size: 13.5px; font-weight: 500; }
+        #sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.4); font-size: 11px; }
+
+        /* Main */
+        #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #topbar { height: var(--header-h); min-height: var(--header-h); background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; }
+        #menu-toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; color: var(--text); }
+        #page-title { font-size: 16px; font-weight: 600; flex: 1; }
+        #user-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+        .btn-logout { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--text-secondary); transition: background .15s; }
+        .btn-logout:hover { background: var(--content-bg); }
+        #content { flex: 1; overflow-y: auto; padding: 24px; }
+
+        /* Cards */
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; }
+        .card-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: var(--accent-light); color: var(--accent); }
+
+        /* Grid */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+        /* Stat cards */
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; }
+        .stat-card .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: var(--text-secondary); }
+        .stat-card .stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; color: var(--text); }
+        .stat-card .stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Progress */
+        .progress-bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width .4s ease; }
+        .progress-bar-fill.warn { background: var(--warning); }
+        .progress-bar-fill.danger { background: var(--danger); }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: background .15s; text-decoration: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-dark); }
+        .btn-secondary { background: var(--content-bg); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #edf1f7; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: #b71c1c; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+        .btn-icon { padding: 6px; border-radius: 6px; background: none; border: 1px solid var(--border); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: background .15s; }
+        .btn-icon:hover { background: var(--content-bg); }
+        .btn-icon.danger:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+        .btn-icon.success:hover { background: var(--success-light); color: var(--success); border-color: var(--success); }
+
+        /* Tables */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-secondary); border-bottom: 1px solid var(--border); background: #fafbfc; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #fafcff; }
+        .actions-cell { display: flex; gap: 6px; align-items: center; }
+
+        /* Status badges */
+        .badge-status { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-online { background: var(--success-light); color: var(--success); }
+        .badge-offline { background: var(--danger-light); color: var(--danger); }
+        .badge-unknown { background: #f3f3f3; color: #888; }
+        .badge-info { background: var(--accent-light); color: var(--accent); }
+        .badge-warn { background: var(--warning-light); color: var(--warning); }
+        .badge-error { background: var(--danger-light); color: var(--danger); }
+
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+        input[type=text], input[type=password], input[type=number], select, textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: var(--font); background: #fff; color: var(--text); transition: border-color .15s, box-shadow .15s; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(33,150,243,.1); }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; }
+        .checkbox-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+        .checkbox-row label { margin: 0; font-size: 13px; font-weight: 500; color: var(--text); cursor: pointer; }
+        .form-hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; align-items: center; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .2s; }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); width: 480px; max-width: 96vw; max-height: 90vh; overflow-y: auto; transform: scale(.96); transition: transform .2s; }
+        .modal-overlay.open .modal { transform: scale(1); }
+        .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 15px; font-weight: 600; }
+        .modal-close { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 20px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+        .modal-close:hover { background: var(--content-bg); }
+        .modal-body { padding: 20px 24px; }
+        .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column-reverse; gap: 10px; z-index: 9999; }
+        .toast { min-width: 280px; max-width: 400px; padding: 12px 18px; border-radius: var(--radius); box-shadow: var(--shadow-lg); font-size: 13px; font-weight: 500; display: flex; align-items: flex-start; gap: 10px; animation: toast-in .25s ease; }
+        .toast.success { background: var(--success); color: #fff; }
+        .toast.error { background: var(--danger); color: #fff; }
+        .toast.info { background: var(--accent); color: #fff; }
+        @keyframes toast-in { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Login */
+        #login-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #1a2332 0%, #243147 100%); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .login-box { background: #fff; border-radius: 12px; padding: 40px; width: 380px; max-width: 92vw; box-shadow: var(--shadow-lg); }
+        .login-logo { text-align: center; margin-bottom: 28px; }
+        .login-logo .l-title { font-size: 22px; font-weight: 700; color: var(--text); }
+        .login-logo .l-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+        .login-error { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+        .login-error.visible { display: block; }
+
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Activity feed */
+        .activity-list { list-style: none; }
+        .activity-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+        .activity-dot.info { background: var(--accent); }
+        .activity-dot.warn { background: var(--warning); }
+        .activity-dot.error { background: var(--danger); }
+        .activity-dot.success { background: var(--success); }
+        .activity-time { font-size: 11px; color: var(--text-secondary); }
+        .activity-msg { font-size: 13px; }
+
+        /* Logs */
+        .log-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+        .log-controls select, .log-controls input { width: auto; min-width: 140px; }
+        .log-toggle { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .log-entry { font-family: 'SF Mono','Fira Mono','Cascadia Code',monospace; font-size: 12px; padding: 6px 10px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 160px 70px 110px 1fr; gap: 10px; align-items: start; }
+        .log-entry:hover { background: #fafcff; }
+        .log-level { font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 3px; text-align: center; }
+        .log-level-INFO { background: var(--accent-light); color: var(--accent); }
+        .log-level-WARNING { background: var(--warning-light); color: var(--warning); }
+        .log-level-ERROR { background: var(--danger-light); color: var(--danger); }
+        .log-level-DEBUG { background: #f3f3f3; color: #888; }
+        .log-level-CRITICAL { background: #4a0000; color: #ff8a80; }
+        .log-msg { word-break: break-word; }
+        .pagination { display: flex; align-items: center; gap: 8px; margin-top: 14px; justify-content: flex-end; flex-wrap: wrap; }
+        .page-btn { border: 1px solid var(--border); border-radius: 5px; padding: 4px 10px; background: #fff; cursor: pointer; font-size: 12px; }
+        .page-btn:hover { background: var(--content-bg); }
+        .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .page-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+        /* Wizard */
+        .wizard-steps { display: flex; gap: 0; margin-bottom: 28px; }
+        .wizard-step { flex: 1; text-align: center; position: relative; padding-bottom: 12px; }
+        .wizard-step::after { content: ''; position: absolute; left: 50%; right: -50%; top: 14px; height: 2px; background: var(--border); z-index: 0; }
+        .wizard-step:last-child::after { display: none; }
+        .step-circle { width: 28px; height: 28px; border-radius: 50%; background: var(--border); color: var(--text-secondary); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; position: relative; z-index: 1; transition: background .2s, color .2s; }
+        .wizard-step.done .step-circle { background: var(--success); color: #fff; }
+        .wizard-step.active .step-circle { background: var(--accent); color: #fff; }
+        .step-label { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+        .wizard-step.active .step-label, .wizard-step.done .step-label { color: var(--text); font-weight: 500; }
+        .wizard-content { min-height: 180px; }
+        .wizard-nav { display: flex; justify-content: space-between; margin-top: 24px; }
+        .wizard-progress-bar { height: 4px; border-radius: 2px; background: var(--border); margin-bottom: 24px; overflow: hidden; }
+        .wizard-progress-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width .3s ease; }
+
+        /* Responsive */
+        @media (max-width: 900px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 680px) {
+            #sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+            #menu-toggle { display: flex; }
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            #content { padding: 16px; }
+        }
+        @media (max-width: 520px) { .log-entry { grid-template-columns: 70px 1fr; } .log-entry .log-ts, .log-entry .log-label { display: none; } }
+        @media (max-width: 480px) { .wizard-step .step-label { display: none; } .log-controls { flex-direction: column; align-items: stretch; } .log-controls select, .log-controls input { width: 100%; min-width: unset; } }
+
+        /* Helpers */
+        .text-secondary { color: var(--text-secondary); }
+        .text-sm { font-size: 12px; }
+        .spacer { flex: 1; }
+        .divider { height: 1px; background: var(--border); margin: 16px 0; }
+        .empty-state { text-align: center; padding: 48px 24px; color: var(--text-secondary); }
+        .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-row td { text-align: center; padding: 32px; color: var(--text-secondary); }
+        #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; }
+        @media (max-width: 680px) { #sidebar-overlay.open { display: block; } }
+    </style>
 </head>
 <body>
-    <h1>Mayam</h1>
-    <p>Administration console placeholder. Full implementation in Milestone 7.</p>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="login-logo">
+            <div class="l-title">&#x2695; Mayam</div>
+            <div class="l-sub">Administration Console</div>
+        </div>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" autocomplete="username" placeholder="admin" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" autocomplete="current-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required>
+            </div>
+            <div class="login-error" id="login-error"></div>
+            <div class="form-actions" style="margin-top:16px">
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center" id="login-btn">Sign In</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div id="sidebar-overlay"></div>
+
+<!-- APP SHELL -->
+<div id="app" style="display:none">
+    <nav id="sidebar">
+        <div id="sidebar-logo">
+            <div class="logo-title">&#x2695; Mayam</div>
+            <div class="logo-sub">Administration Console</div>
+        </div>
+        <div id="sidebar-nav">
+            <div class="nav-section-label">Overview</div>
+            <a class="nav-item active" data-section="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <div class="nav-section-label">Configuration</div>
+            <a class="nav-item" data-section="nodes">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                <span class="nav-label">DICOM Nodes</span>
+            </a>
+            <a class="nav-item" data-section="storage">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+                <span class="nav-label">Storage</span>
+            </a>
+            <a class="nav-item" data-section="settings">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1.65 1.65V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.4 15a1.65 1.65 0 0 0-1.65-1.65H1.71a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.4 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 8 3.4a1.65 1.65 0 0 0 1.65-1.65V1.71a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 3.4a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 8a1.65 1.65 0 0 0 1.65 1.65H21.29a2 2 0 0 1 0 4h-.09A1.65 1.65 0 0 0 19.4 15z"/></svg>
+                <span class="nav-label">Settings</span>
+            </a>
+            <div class="nav-section-label">Operations</div>
+            <a class="nav-item" data-section="logs">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span class="nav-label">Logs</span>
+            </a>
+            <div class="nav-section-label">Setup</div>
+            <a class="nav-item" data-section="wizard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span class="nav-label">Setup Wizard</span>
+            </a>
+        </div>
+        <div id="sidebar-footer">Mayam PACS</div>
+    </nav>
+
+    <div id="main">
+        <div id="topbar">
+            <button id="menu-toggle" aria-label="Toggle menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span id="page-title">Dashboard</span>
+            <div id="user-badge">
+                <div class="avatar" id="user-avatar">A</div>
+                <span id="user-name">admin</span>
+            </div>
+            <button class="btn-logout" id="logout-btn">Sign out</button>
+        </div>
+        <div id="content">
+
+            <!-- DASHBOARD -->
+            <div id="section-dashboard" class="section active">
+                <div class="grid-4" style="margin-bottom:20px">
+                    <div class="stat-card">
+                        <div class="stat-label">AE Title</div>
+                        <div class="stat-value" id="dash-ae" style="font-size:20px">&#x2014;</div>
+                        <div class="stat-sub">Application Entity</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Server Version</div>
+                        <div class="stat-value" id="dash-version" style="font-size:20px">&#x2014;</div>
+                        <div class="stat-sub" id="dash-uptime">Uptime: &#x2014;</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Active Associations</div>
+                        <div class="stat-value" id="dash-assoc">0</div>
+                        <div class="stat-sub" id="dash-assoc-peak">Peak today: &#x2014;</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Studies Today</div>
+                        <div class="stat-value" id="dash-studies">0</div>
+                        <div class="stat-sub" id="dash-instances">Instances: &#x2014;</div>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">Storage Utilisation</div>
+                        <div id="dash-storage-pools"><div class="empty-state"><span class="spinner"></span></div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Recent Activity</div>
+                        <ul class="activity-list" id="dash-activity">
+                            <li style="text-align:center;padding:24px;color:var(--text-secondary)"><span class="spinner"></span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Server Status <span class="badge" id="dash-status-badge">&#x2014;</span></div>
+                    <div class="grid-3" id="dash-services"><div class="text-secondary text-sm">Loading&#x2026;</div></div>
+                </div>
+            </div>
+
+            <!-- DICOM NODES -->
+            <div id="section-nodes" class="section">
+                <div class="card">
+                    <div style="display:flex;align-items:center;margin-bottom:16px">
+                        <div class="card-title" style="margin:0">Remote AE Nodes</div>
+                        <div class="spacer"></div>
+                        <button class="btn btn-primary btn-sm" id="btn-add-node">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Node
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>AE Title</th><th>Host / IP</th><th>Port</th><th>Description</th><th>TLS</th><th>Last Echo</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody id="nodes-tbody">
+                                <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STORAGE -->
+            <div id="section-storage" class="section">
+                <div class="card">
+                    <div style="display:flex;align-items:center;margin-bottom:16px">
+                        <div class="card-title" style="margin:0">Storage Pools</div>
+                        <div class="spacer"></div>
+                        <button class="btn btn-secondary btn-sm" id="btn-integrity-check">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                            Run Integrity Check
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>Pool Name</th><th>Path</th><th>Tier</th><th>Used</th><th>Total</th><th>Utilisation</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="storage-tbody">
+                                <tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card" id="integrity-results-card" style="display:none">
+                    <div class="card-title">Integrity Check Results</div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Study UID</th><th>Status</th><th>Issues</th><th>Checked At</th></tr></thead>
+                            <tbody id="integrity-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS -->
+            <div id="section-logs" class="section">
+                <div class="card">
+                    <div class="log-controls">
+                        <select id="log-level-filter">
+                            <option value="">All Levels</option>
+                            <option value="INFO">INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                        <input type="text" id="log-label-filter" placeholder="Filter by label&#x2026;" style="min-width:180px">
+                        <button class="btn btn-secondary btn-sm" id="btn-refresh-logs">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            Refresh
+                        </button>
+                        <div class="log-toggle">
+                            <input type="checkbox" id="log-auto-refresh" style="width:auto">
+                            <label for="log-auto-refresh" style="margin:0;font-weight:400;font-size:12px">Auto-refresh (5s)</label>
+                        </div>
+                    </div>
+                    <div style="border:1px solid var(--border);border-radius:6px;overflow:hidden">
+                        <div style="display:grid;grid-template-columns:160px 70px 110px 1fr;gap:10px;padding:6px 10px;background:#fafbfc;border-bottom:1px solid var(--border)">
+                            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-secondary)">Timestamp</span>
+                            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-secondary)">Level</span>
+                            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-secondary)">Label</span>
+                            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text-secondary)">Message</span>
+                        </div>
+                        <div id="log-entries"><div style="text-align:center;padding:32px;color:var(--text-secondary)"><span class="spinner"></span></div></div>
+                    </div>
+                    <div class="pagination" id="log-pagination"></div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div id="section-settings" class="section">
+                <form id="settings-form">
+                    <div class="card">
+                        <div class="card-title">DICOM Configuration</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cfg-ae-title">AE Title</label>
+                                <input type="text" id="cfg-ae-title" maxlength="16" placeholder="MAYAM">
+                                <div class="form-hint">Max 16 characters, uppercase. DICOM Application Entity Title.</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-dicom-port">DICOM Port</label>
+                                <input type="number" id="cfg-dicom-port" min="1" max="65535" placeholder="11112">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cfg-web-port">DICOMweb Port</label>
+                                <input type="number" id="cfg-web-port" min="1" max="65535" placeholder="8080">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-admin-port">Admin Port</label>
+                                <input type="number" id="cfg-admin-port" min="1" max="65535" placeholder="8081">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Storage &amp; Archive</div>
+                        <div class="form-group">
+                            <label for="cfg-archive-path">Archive Path</label>
+                            <input type="text" id="cfg-archive-path" placeholder="/var/lib/mayam/archive">
+                            <div class="form-hint">Absolute path to the primary archive directory.</div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-row">
+                                <input type="checkbox" id="cfg-checksum">
+                                <label for="cfg-checksum">Enable SHA-256 integrity checksums on ingest</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Logging</div>
+                        <div class="form-group" style="max-width:280px">
+                            <label for="cfg-log-level">Log Level</label>
+                            <select id="cfg-log-level">
+                                <option value="trace">Trace</option>
+                                <option value="debug">Debug</option>
+                                <option value="info" selected>Info</option>
+                                <option value="notice">Notice</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+                        <button type="button" class="btn btn-secondary" id="btn-reload-settings">Reload</button>
+                        <span id="settings-save-msg" style="font-size:12px;color:var(--success);display:none">&#x2713; Saved</span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- SETUP WIZARD -->
+            <div id="section-wizard" class="section">
+                <div class="card" style="max-width:700px;margin:0 auto">
+                    <div class="card-title">First-Run Setup Wizard</div>
+                    <div class="wizard-progress-bar"><div class="wizard-progress-fill" id="wizard-progress" style="width:0%"></div></div>
+                    <div class="wizard-steps" id="wizard-steps-nav"></div>
+                    <div class="wizard-content" id="wizard-content"><div class="empty-state"><span class="spinner"></span></div></div>
+                    <div class="wizard-nav">
+                        <button class="btn btn-secondary" id="wizard-back-btn">Back</button>
+                        <button class="btn btn-primary" id="wizard-next-btn">Next</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /content -->
+    </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- DICOM NODE MODAL -->
+<div class="modal-overlay" id="node-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="node-modal-title">Add DICOM Node</div>
+            <button class="modal-close" data-close="node-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="node-ae">AE Title</label>
+                    <input type="text" id="node-ae" maxlength="16" placeholder="REMOTE_AE" required>
+                </div>
+                <div class="form-group">
+                    <label for="node-host">Host / IP Address</label>
+                    <input type="text" id="node-host" placeholder="192.168.1.100" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="node-port">Port</label>
+                    <input type="number" id="node-port" min="1" max="65535" placeholder="11112" required>
+                </div>
+                <div class="form-group">
+                    <label for="node-desc">Description</label>
+                    <input type="text" id="node-desc" placeholder="Modality / Workstation label">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="checkbox-row">
+                    <input type="checkbox" id="node-tls">
+                    <label for="node-tls">Enable TLS 1.3</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="node-modal">Cancel</button>
+            <button class="btn btn-primary" id="node-modal-save">Save Node</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// Mayam Administration Console — SPA
+// ============================================================
+
+const API = '/admin/api';
+const TOKEN_KEY = 'adminToken';
+
+// Token helpers
+function getToken() { return sessionStorage.getItem(TOKEN_KEY); }
+function setToken(t) { sessionStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { sessionStorage.removeItem(TOKEN_KEY); }
+
+function isTokenValid() {
+    const t = getToken();
+    if (!t) return false;
+    try {
+        const parts = t.split('.');
+        if (parts.length < 2) return false;
+        const payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        return payload.exp * 1000 > Date.now();
+    } catch { return false; }
+}
+
+// API helpers
+async function apiFetch(path, opts) {
+    opts = opts || {};
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(API + path, Object.assign({}, opts, { headers: headers }));
+    if (res.status === 401) { showLogin(); throw new Error('Unauthorised'); }
+    if (!res.ok) {
+        let msg = res.statusText;
+        try { const j = await res.json(); msg = j.error || j.message || msg; } catch(e) {}
+        throw new Error(msg);
+    }
+    if (res.status === 204) return null;
+    return res.json();
+}
+
+// Toast
+function toast(msg, type, duration) {
+    type = type || 'info';
+    duration = duration || 3500;
+    const c = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(function() {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity .3s';
+        setTimeout(function() { el.remove(); }, 300);
+    }, duration);
+}
+
+// Format helpers
+function fmtBytes(bytes) {
+    if (bytes === null || bytes === undefined || isNaN(bytes)) return '\u2014';
+    var units = ['B','KB','MB','GB','TB','PB'];
+    var i = 0, v = +bytes;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return (i === 0 ? v.toFixed(0) : v.toFixed(1)) + ' ' + units[i];
+}
+
+function fmtDate(ts) {
+    if (!ts) return '\u2014';
+    try { return new Date(ts).toLocaleString(); } catch(e) { return ts; }
+}
+
+function fmtUptime(seconds) {
+    if (!seconds && seconds !== 0) return '\u2014';
+    var d = Math.floor(seconds / 86400);
+    var h = Math.floor((seconds % 86400) / 3600);
+    var m = Math.floor((seconds % 3600) / 60);
+    var parts = [];
+    if (d) parts.push(d + 'd');
+    if (h) parts.push(h + 'h');
+    parts.push(m + 'm');
+    return parts.join(' ');
+}
+
+function pct(used, total) {
+    if (!total) return 0;
+    return Math.min(100, Math.round((used / total) * 100));
+}
+
+function pctClass(p) {
+    if (p >= 90) return 'danger';
+    if (p >= 75) return 'warn';
+    return '';
+}
+
+function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = (s == null) ? '' : String(s);
+    return d.innerHTML;
+}
+
+function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+// Login / Auth
+function showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+}
+
+document.getElementById('login-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var username = document.getElementById('login-username').value.trim();
+    var password = document.getElementById('login-password').value;
+    var btn = document.getElementById('login-btn');
+    var errEl = document.getElementById('login-error');
+    errEl.classList.remove('visible');
+    btn.disabled = true;
+    btn.textContent = 'Signing in\u2026';
+    fetch(API + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, password: password })
+    }).then(function(res) {
+        if (!res.ok) return res.json().catch(function() { return {}; }).then(function(j) { throw new Error(j.error || j.message || 'Invalid credentials'); });
+        return res.json();
+    }).then(function(json) {
+        setToken(json.token);
+        document.getElementById('user-name').textContent = username;
+        document.getElementById('user-avatar').textContent = username.charAt(0).toUpperCase();
+        showApp();
+        navigate('dashboard');
+        loadDashboard();
+    }).catch(function(err) {
+        errEl.textContent = err.message;
+        errEl.classList.add('visible');
+    }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+    });
+});
+
+document.getElementById('logout-btn').addEventListener('click', function() {
+    clearToken();
+    showLogin();
+});
+
+// Navigation
+var PAGE_TITLES = { dashboard: 'Dashboard', nodes: 'DICOM Nodes', storage: 'Storage', logs: 'Logs', settings: 'Settings', wizard: 'Setup Wizard' };
+var currentSection = 'dashboard';
+
+function navigate(section) {
+    document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    var sec = document.getElementById('section-' + section);
+    if (sec) sec.classList.add('active');
+    var nav = document.querySelector('.nav-item[data-section="' + section + '"]');
+    if (nav) nav.classList.add('active');
+    document.getElementById('page-title').textContent = PAGE_TITLES[section] || section;
+    currentSection = section;
+    closeSidebar();
+    if (section === 'dashboard') loadDashboard();
+    else if (section === 'nodes') loadNodes();
+    else if (section === 'storage') loadStorage();
+    else if (section === 'logs') loadLogs();
+    else if (section === 'settings') loadSettings();
+    else if (section === 'wizard') loadWizard();
+}
+
+document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.addEventListener('click', function() { navigate(item.dataset.section); });
+});
+
+var sidebar = document.getElementById('sidebar');
+var overlay = document.getElementById('sidebar-overlay');
+document.getElementById('menu-toggle').addEventListener('click', function() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', closeSidebar);
+function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+
+// Modal helpers
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('[data-close]').forEach(function(btn) {
+    btn.addEventListener('click', function() { closeModal(btn.dataset.close); });
+});
+document.querySelectorAll('.modal-overlay').forEach(function(o) {
+    o.addEventListener('click', function(e) { if (e.target === o) closeModal(o.id); });
+});
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function loadDashboard() {
+    apiFetch('/dashboard').then(function(data) {
+        setText('dash-ae', data.aeTitle || '\u2014');
+        setText('dash-version', data.version || '\u2014');
+        setText('dash-uptime', 'Uptime: ' + fmtUptime(data.uptimeSeconds));
+        if (data.version) { var footer = document.getElementById('sidebar-footer'); if (footer) footer.textContent = 'Mayam PACS v' + data.version; }
+        setText('dash-assoc', data.activeAssociations != null ? data.activeAssociations : 0);
+        setText('dash-assoc-peak', 'Peak today: ' + (data.peakAssociationsToday != null ? data.peakAssociationsToday : '\u2014'));
+        setText('dash-studies', data.studiesToday != null ? data.studiesToday : 0);
+        setText('dash-instances', 'Instances: ' + (data.instancesTotal != null ? data.instancesTotal.toLocaleString() : '\u2014'));
+
+        var badge = document.getElementById('dash-status-badge');
+        var statusOk = data.status === 'running' || data.status === 'ok';
+        badge.textContent = data.status || 'unknown';
+        badge.style.background = statusOk ? 'var(--success-light)' : 'var(--danger-light)';
+        badge.style.color = statusOk ? 'var(--success)' : 'var(--danger)';
+
+        var svcEl = document.getElementById('dash-services');
+        if (data.services && data.services.length) {
+            svcEl.innerHTML = data.services.map(function(s) {
+                return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0">' +
+                    '<span class="badge-status ' + (s.running ? 'badge-online' : 'badge-offline') + '">' + (s.running ? 'Running' : 'Stopped') + '</span>' +
+                    '<span style="font-size:13px">' + esc(s.name) + '</span>' +
+                    '<span style="font-size:11px;color:var(--text-secondary)">' + esc(s.port ? ':' + s.port : '') + '</span>' +
+                    '</div>';
+            }).join('');
+        } else {
+            svcEl.innerHTML = '<div class="text-secondary text-sm">No service data available.</div>';
+        }
+
+        var storageEl = document.getElementById('dash-storage-pools');
+        if (data.storagePools && data.storagePools.length) {
+            storageEl.innerHTML = data.storagePools.map(function(p) {
+                var p_ = pct(p.usedBytes, p.totalBytes);
+                return '<div style="margin-bottom:14px">' +
+                    '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>' + esc(p.name) + '</span><span class="text-secondary">' + fmtBytes(p.usedBytes) + ' / ' + fmtBytes(p.totalBytes) + '</span></div>' +
+                    '<div class="progress-bar"><div class="progress-bar-fill ' + pctClass(p_) + '" style="width:' + p_ + '%"></div></div>' +
+                    '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px">' + p_ + '% used \u00b7 ' + esc(p.tier || 'online') + '</div>' +
+                    '</div>';
+            }).join('');
+        } else {
+            storageEl.innerHTML = '<div class="text-secondary text-sm">No storage pools configured.</div>';
+        }
+
+        var actEl = document.getElementById('dash-activity');
+        if (data.recentActivity && data.recentActivity.length) {
+            actEl.innerHTML = data.recentActivity.map(function(a) {
+                return '<li class="activity-item">' +
+                    '<div class="activity-dot ' + esc(a.type || 'info') + '"></div>' +
+                    '<div><div class="activity-msg">' + esc(a.message) + '</div><div class="activity-time">' + fmtDate(a.timestamp) + '</div></div>' +
+                    '</li>';
+            }).join('');
+        } else {
+            actEl.innerHTML = '<li style="text-align:center;padding:24px;color:var(--text-secondary)">No recent activity.</li>';
+        }
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') toast('Failed to load dashboard: ' + err.message, 'error');
+    });
+}
+
+// ============================================================
+// DICOM NODES
+// ============================================================
+var nodeEditId = null;
+
+function loadNodes() {
+    var tbody = document.getElementById('nodes-tbody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>';
+    apiFetch('/nodes').then(function(nodes) {
+        if (!nodes || !nodes.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-secondary)">No DICOM nodes configured. Click <strong>Add Node</strong> to get started.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = nodes.map(function(n) {
+            return '<tr data-id="' + esc(n.id) + '">' +
+                '<td><strong>' + esc(n.aeTitle) + '</strong></td>' +
+                '<td>' + esc(n.host) + '</td>' +
+                '<td>' + esc(n.port) + '</td>' +
+                '<td>' + esc(n.description || '\u2014') + '</td>' +
+                '<td>' + (n.tlsEnabled ? '<span class="badge-status badge-info">TLS</span>' : '<span class="badge-status badge-unknown">No</span>') + '</td>' +
+                '<td>' + fmtDate(n.lastEchoAt) + '</td>' +
+                '<td><div class="actions-cell">' +
+                '<button class="btn-icon success" title="C-ECHO Verify" onclick="echoNode(\'' + esc(n.id) + '\',\'' + esc(n.aeTitle) + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+                '</button>' +
+                '<button class="btn-icon" title="Edit" onclick="editNode(\'' + esc(n.id) + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+                '</button>' +
+                '<button class="btn-icon danger" title="Delete" onclick="deleteNode(\'' + esc(n.id) + '\',\'' + esc(n.aeTitle) + '\')">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>' +
+                '</button>' +
+                '</div></td></tr>';
+        }).join('');
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--danger)">' + esc(err.message) + '</td></tr>';
+            toast('Failed to load nodes: ' + err.message, 'error');
+        }
+    });
+}
+
+document.getElementById('btn-add-node').addEventListener('click', function() {
+    nodeEditId = null;
+    document.getElementById('node-modal-title').textContent = 'Add DICOM Node';
+    document.getElementById('node-ae').value = '';
+    document.getElementById('node-host').value = '';
+    document.getElementById('node-port').value = '11112';
+    document.getElementById('node-desc').value = '';
+    document.getElementById('node-tls').checked = false;
+    openModal('node-modal');
+});
+
+function editNode(id) {
+    apiFetch('/nodes/' + id).then(function(n) {
+        nodeEditId = id;
+        document.getElementById('node-modal-title').textContent = 'Edit DICOM Node';
+        document.getElementById('node-ae').value = n.aeTitle || '';
+        document.getElementById('node-host').value = n.host || '';
+        document.getElementById('node-port').value = n.port || 11112;
+        document.getElementById('node-desc').value = n.description || '';
+        document.getElementById('node-tls').checked = !!n.tlsEnabled;
+        openModal('node-modal');
+    }).catch(function(err) { toast('Failed to load node: ' + err.message, 'error'); });
+}
+
+document.getElementById('node-modal-save').addEventListener('click', function() {
+    var body = {
+        aeTitle: document.getElementById('node-ae').value.trim(),
+        host: document.getElementById('node-host').value.trim(),
+        port: parseInt(document.getElementById('node-port').value, 10),
+        description: document.getElementById('node-desc').value.trim(),
+        tlsEnabled: document.getElementById('node-tls').checked
+    };
+    if (!body.aeTitle || !body.host || !body.port) { toast('AE Title, Host, and Port are required.', 'error'); return; }
+    var promise = nodeEditId
+        ? apiFetch('/nodes/' + nodeEditId, { method: 'PUT', body: JSON.stringify(body) })
+        : apiFetch('/nodes', { method: 'POST', body: JSON.stringify(body) });
+    promise.then(function() {
+        toast(nodeEditId ? 'Node updated.' : 'Node added.', 'success');
+        closeModal('node-modal');
+        loadNodes();
+    }).catch(function(err) { toast('Save failed: ' + err.message, 'error'); });
+});
+
+function deleteNode(id, ae) {
+    if (!confirm('Delete node "' + ae + '"? This cannot be undone.')) return;
+    apiFetch('/nodes/' + id, { method: 'DELETE' }).then(function() {
+        toast('Node "' + ae + '" deleted.', 'success');
+        loadNodes();
+    }).catch(function(err) { toast('Delete failed: ' + err.message, 'error'); });
+}
+
+function echoNode(id, ae) {
+    toast('Sending C-ECHO to ' + ae + '\u2026', 'info');
+    apiFetch('/nodes/' + id + '/verify', { method: 'POST' }).then(function(res) {
+        if (res && res.success) {
+            toast('C-ECHO success: ' + ae + ' responded in ' + (res.roundTripMs != null ? res.roundTripMs : '?') + 'ms', 'success');
+        } else {
+            toast('C-ECHO failed: ' + (res ? res.message : 'No response'), 'error');
+        }
+        loadNodes();
+    }).catch(function(err) { toast('C-ECHO failed: ' + err.message, 'error'); });
+}
+
+// ============================================================
+// STORAGE
+// ============================================================
+function loadStorage() {
+    var tbody = document.getElementById('storage-tbody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><span class="spinner"></span></td></tr>';
+    apiFetch('/storage').then(function(data) {
+        var pools = data.pools || data || [];
+        if (!pools.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-secondary)">No storage pools found.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = pools.map(function(p) {
+            var p_ = pct(p.usedBytes, p.totalBytes);
+            return '<tr>' +
+                '<td><strong>' + esc(p.name) + '</strong></td>' +
+                '<td><code style="font-size:11px">' + esc(p.path) + '</code></td>' +
+                '<td><span class="badge-status badge-info">' + esc(p.tier || 'online') + '</span></td>' +
+                '<td>' + fmtBytes(p.usedBytes) + '</td>' +
+                '<td>' + fmtBytes(p.totalBytes) + '</td>' +
+                '<td style="min-width:140px"><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar" style="flex:1"><div class="progress-bar-fill ' + pctClass(p_) + '" style="width:' + p_ + '%"></div></div><span style="font-size:11px;color:var(--text-secondary);min-width:32px">' + p_ + '%</span></div></td>' +
+                '<td><span class="badge-status ' + (p.status === 'ok' || p.status === 'healthy' ? 'badge-online' : p.status === 'degraded' ? 'badge-warn' : 'badge-offline') + '">' + esc(p.status || 'unknown') + '</span></td>' +
+                '</tr>';
+        }).join('');
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--danger)">' + esc(err.message) + '</td></tr>';
+            toast('Failed to load storage: ' + err.message, 'error');
+        }
+    });
+}
+
+document.getElementById('btn-integrity-check').addEventListener('click', function() {
+    var btn = document.getElementById('btn-integrity-check');
+    btn.disabled = true;
+    btn.textContent = 'Running\u2026';
+    toast('Integrity check started\u2026', 'info');
+    apiFetch('/storage/check', { method: 'POST' }).then(function(results) {
+        var card = document.getElementById('integrity-results-card');
+        var tbody = document.getElementById('integrity-tbody');
+        card.style.display = '';
+        var rows = Array.isArray(results) ? results : (results.results || []);
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-secondary)">No issues found.</td></tr>';
+        } else {
+            tbody.innerHTML = rows.map(function(r) {
+                return '<tr><td><code style="font-size:11px">' + esc(r.studyUID || r.studyInstanceUID || '\u2014') + '</code></td>' +
+                    '<td><span class="badge-status ' + (r.status === 'ok' ? 'badge-online' : 'badge-error') + '">' + esc(r.status || '\u2014') + '</span></td>' +
+                    '<td>' + esc(r.issues || '\u2014') + '</td>' +
+                    '<td>' + fmtDate(r.checkedAt || r.timestamp) + '</td></tr>';
+            }).join('');
+        }
+        toast('Integrity check complete.', 'success');
+    }).catch(function(err) {
+        toast('Integrity check failed: ' + err.message, 'error');
+    }).finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Run Integrity Check';
+    });
+});
+
+// ============================================================
+// LOGS
+// ============================================================
+var LOG_PAGE_SIZE = 20;
+var logPage = 0;
+var logTotal = 0;
+var logAutoRefreshTimer = null;
+
+function loadLogs() {
+    var level = document.getElementById('log-level-filter').value;
+    var label = document.getElementById('log-label-filter').value.trim();
+    var offset = logPage * LOG_PAGE_SIZE;
+    var params = new URLSearchParams({ limit: LOG_PAGE_SIZE, offset: offset });
+    if (level) params.set('level', level);
+    if (label) params.set('label', label);
+    var container = document.getElementById('log-entries');
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-secondary)"><span class="spinner"></span></div>';
+    apiFetch('/logs?' + params.toString()).then(function(data) {
+        var entries = data.entries || data || [];
+        logTotal = data.total || entries.length;
+        if (!entries.length) {
+            container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-secondary)">No log entries found.</div>';
+        } else {
+            container.innerHTML = entries.map(function(e) {
+                return '<div class="log-entry">' +
+                    '<span class="log-ts text-secondary" style="font-size:11px">' + fmtDate(e.timestamp) + '</span>' +
+                    '<span class="log-level log-level-' + esc(e.level || 'INFO') + '">' + esc(e.level || 'INFO') + '</span>' +
+                    '<span class="log-label text-secondary" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(e.label || '\u2014') + '</span>' +
+                    '<span class="log-msg">' + esc(e.message) + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+        renderLogPagination();
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--danger)">' + esc(err.message) + '</div>';
+    });
+}
+
+function renderLogPagination() {
+    var totalPages = Math.max(1, Math.ceil(logTotal / LOG_PAGE_SIZE));
+    var pg = document.getElementById('log-pagination');
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    var html = '<button class="page-btn" ' + (logPage === 0 ? 'disabled' : '') + ' onclick="goLogPage(' + (logPage - 1) + ')">\u2039 Prev</button>';
+    var start = Math.max(0, logPage - 2), end = Math.min(totalPages - 1, logPage + 2);
+    for (var i = start; i <= end; i++) {
+        html += '<button class="page-btn ' + (i === logPage ? 'active' : '') + '" onclick="goLogPage(' + i + ')">' + (i + 1) + '</button>';
+    }
+    html += '<button class="page-btn" ' + (logPage >= totalPages - 1 ? 'disabled' : '') + ' onclick="goLogPage(' + (logPage + 1) + ')">Next \u203a</button>';
+    html += '<span style="font-size:12px;color:var(--text-secondary)">Page ' + (logPage + 1) + ' of ' + totalPages + ' (' + logTotal + ' entries)</span>';
+    pg.innerHTML = html;
+}
+
+function goLogPage(p) { logPage = p; loadLogs(); }
+
+document.getElementById('btn-refresh-logs').addEventListener('click', function() { logPage = 0; loadLogs(); });
+document.getElementById('log-level-filter').addEventListener('change', function() { logPage = 0; loadLogs(); });
+
+function debounce(fn, ms) {
+    var t;
+    return function() { var args = arguments; clearTimeout(t); t = setTimeout(function() { fn.apply(null, args); }, ms); };
+}
+document.getElementById('log-label-filter').addEventListener('input', debounce(function() { logPage = 0; loadLogs(); }, 400));
+
+document.getElementById('log-auto-refresh').addEventListener('change', function() {
+    if (this.checked) {
+        logAutoRefreshTimer = setInterval(loadLogs, 5000);
+    } else {
+        clearInterval(logAutoRefreshTimer);
+        logAutoRefreshTimer = null;
+    }
+});
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function loadSettings() {
+    apiFetch('/settings').then(function(s) {
+        document.getElementById('cfg-ae-title').value = s.aeTitle || '';
+        document.getElementById('cfg-dicom-port').value = s.dicomPort || '';
+        document.getElementById('cfg-web-port').value = s.webPort || s.dicomwebPort || '';
+        document.getElementById('cfg-admin-port').value = s.adminPort || '';
+        document.getElementById('cfg-archive-path').value = s.archivePath || '';
+        document.getElementById('cfg-log-level').value = s.logLevel || 'info';
+        document.getElementById('cfg-checksum').checked = !!s.checksumEnabled;
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') toast('Failed to load settings: ' + err.message, 'error');
+    });
+}
+
+document.getElementById('settings-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var body = {
+        aeTitle: document.getElementById('cfg-ae-title').value.trim(),
+        dicomPort: parseInt(document.getElementById('cfg-dicom-port').value, 10),
+        webPort: parseInt(document.getElementById('cfg-web-port').value, 10),
+        adminPort: parseInt(document.getElementById('cfg-admin-port').value, 10),
+        archivePath: document.getElementById('cfg-archive-path').value.trim(),
+        logLevel: document.getElementById('cfg-log-level').value,
+        checksumEnabled: document.getElementById('cfg-checksum').checked
+    };
+    var btn = document.getElementById('btn-save-settings');
+    var msg = document.getElementById('settings-save-msg');
+    btn.disabled = true;
+    btn.textContent = 'Saving\u2026';
+    apiFetch('/settings', { method: 'PUT', body: JSON.stringify(body) }).then(function() {
+        msg.style.display = 'inline';
+        setTimeout(function() { msg.style.display = 'none'; }, 3000);
+        toast('Settings saved.', 'success');
+    }).catch(function(err) {
+        toast('Save failed: ' + err.message, 'error');
+    }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+    });
+});
+
+document.getElementById('btn-reload-settings').addEventListener('click', loadSettings);
+
+// ============================================================
+// SETUP WIZARD
+// ============================================================
+var WIZARD_STEPS = [
+    { key: 'welcome',  label: 'Welcome',          title: 'Welcome to Mayam' },
+    { key: 'ae',       label: 'AE Configuration', title: 'AE Title & DICOM Port' },
+    { key: 'storage',  label: 'Storage',          title: 'Storage Configuration' },
+    { key: 'network',  label: 'Network',          title: 'Network Configuration' },
+    { key: 'complete', label: 'Complete',         title: 'Setup Complete' }
+];
+
+var WIZARD_CONTENT = {
+    welcome:
+        '<div style="text-align:center;padding:24px 0">' +
+        '<div style="font-size:48px;margin-bottom:16px">&#x2695;</div>' +
+        '<h2 style="font-size:22px;margin-bottom:12px">Welcome to Mayam PACS</h2>' +
+        '<p style="color:var(--text-secondary);max-width:420px;margin:0 auto;line-height:1.6">This wizard will guide you through the initial configuration of your Mayam PACS server. You can revisit this wizard at any time from the sidebar.</p>' +
+        '</div>',
+    ae:
+        '<div><p style="color:var(--text-secondary);margin-bottom:16px">Configure the DICOM Application Entity identity for this server.</p>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label for="wiz-ae-title">AE Title</label><input type="text" id="wiz-ae-title" maxlength="16" placeholder="MAYAM"><div class="form-hint">Max 16 characters, uppercase.</div></div>' +
+        '<div class="form-group"><label for="wiz-dicom-port">DICOM Port</label><input type="number" id="wiz-dicom-port" min="1" max="65535" placeholder="11112"></div>' +
+        '</div></div>',
+    storage:
+        '<div><p style="color:var(--text-secondary);margin-bottom:16px">Configure where DICOM objects will be archived.</p>' +
+        '<div class="form-group"><label for="wiz-archive-path">Archive Path</label><input type="text" id="wiz-archive-path" placeholder="/var/lib/mayam/archive"><div class="form-hint">Must be an absolute path to a writable directory with sufficient disk space.</div></div>' +
+        '<div class="form-group"><div class="checkbox-row"><input type="checkbox" id="wiz-checksum" checked><label for="wiz-checksum">Enable SHA-256 integrity checksums</label></div></div>' +
+        '</div>',
+    network:
+        '<div><p style="color:var(--text-secondary);margin-bottom:16px">Configure web service ports and TLS settings.</p>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label for="wiz-web-port">DICOMweb Port</label><input type="number" id="wiz-web-port" min="1" max="65535" placeholder="8080"></div>' +
+        '<div class="form-group"><label for="wiz-admin-port">Admin Port</label><input type="number" id="wiz-admin-port" min="1" max="65535" placeholder="8081"></div>' +
+        '</div>' +
+        '<div class="form-group"><div class="checkbox-row"><input type="checkbox" id="wiz-tls"><label for="wiz-tls">Enable TLS for DICOM associations</label></div></div>' +
+        '</div>',
+    complete:
+        '<div style="text-align:center;padding:24px 0">' +
+        '<div style="font-size:48px;margin-bottom:16px">&#x2705;</div>' +
+        '<h2 style="font-size:22px;margin-bottom:12px">Setup Complete!</h2>' +
+        '<p style="color:var(--text-secondary);max-width:420px;margin:0 auto;line-height:1.6">Your Mayam PACS server is configured and ready to use. Navigate to the <strong>Dashboard</strong> to monitor your system, add DICOM Nodes, or adjust settings at any time.</p>' +
+        '</div>'
+};
+
+var wizardCurrentStep = 0;
+var wizardSetupData = {};
+
+function loadWizard() {
+    apiFetch('/setup').then(function(data) {
+        wizardCurrentStep = data.currentStep || 0;
+        if (wizardCurrentStep >= WIZARD_STEPS.length) wizardCurrentStep = WIZARD_STEPS.length - 1;
+        wizardSetupData = data.config || {};
+        renderWizard();
+    }).catch(function(err) {
+        if (err.message !== 'Unauthorised') { wizardCurrentStep = 0; renderWizard(); }
+    });
+}
+
+function renderWizard() {
+    var totalSteps = WIZARD_STEPS.length;
+    var stepsEl = document.getElementById('wizard-steps-nav');
+    stepsEl.innerHTML = WIZARD_STEPS.map(function(s, i) {
+        var cls = i < wizardCurrentStep ? 'done' : (i === wizardCurrentStep ? 'active' : '');
+        return '<div class="wizard-step ' + cls + '">' +
+            '<div class="step-circle">' + (i < wizardCurrentStep ? '&#x2713;' : (i + 1)) + '</div>' +
+            '<div class="step-label">' + esc(s.label) + '</div>' +
+            '</div>';
+    }).join('');
+
+    var progress = (wizardCurrentStep / (totalSteps - 1)) * 100;
+    document.getElementById('wizard-progress').style.width = progress + '%';
+
+    var stepKey = WIZARD_STEPS[wizardCurrentStep].key;
+    var stepTitle = WIZARD_STEPS[wizardCurrentStep].title;
+    var contentEl = document.getElementById('wizard-content');
+    contentEl.innerHTML = '<h3 style="margin-bottom:16px;font-size:16px">' + esc(stepTitle) + '</h3>' + (WIZARD_CONTENT[stepKey] || '');
+
+    // Pre-fill
+    if (stepKey === 'ae') {
+        setValIfPresent('wiz-ae-title', wizardSetupData.aeTitle);
+        setValIfPresent('wiz-dicom-port', wizardSetupData.dicomPort);
+    } else if (stepKey === 'storage') {
+        setValIfPresent('wiz-archive-path', wizardSetupData.archivePath);
+        setCheckIfPresent('wiz-checksum', wizardSetupData.checksumEnabled);
+    } else if (stepKey === 'network') {
+        setValIfPresent('wiz-web-port', wizardSetupData.webPort);
+        setValIfPresent('wiz-admin-port', wizardSetupData.adminPort);
+        setCheckIfPresent('wiz-tls', wizardSetupData.tlsEnabled);
+    }
+
+    var backBtn = document.getElementById('wizard-back-btn');
+    var nextBtn = document.getElementById('wizard-next-btn');
+    backBtn.disabled = wizardCurrentStep === 0;
+    backBtn.style.visibility = wizardCurrentStep === 0 ? 'hidden' : 'visible';
+
+    if (wizardCurrentStep === totalSteps - 1) {
+        nextBtn.textContent = 'Go to Dashboard';
+        nextBtn.onclick = function() { navigate('dashboard'); };
+    } else {
+        nextBtn.textContent = wizardCurrentStep === totalSteps - 2 ? 'Complete Setup' : 'Next';
+        nextBtn.onclick = advanceWizard;
+    }
+    backBtn.onclick = function() { wizardCurrentStep = Math.max(0, wizardCurrentStep - 1); renderWizard(); };
+}
+
+function setValIfPresent(id, val) { if (val != null) { var el = document.getElementById(id); if (el) el.value = val; } }
+function setCheckIfPresent(id, val) { if (val != null) { var el = document.getElementById(id); if (el) el.checked = !!val; } }
+
+function advanceWizard() {
+    var stepKey = WIZARD_STEPS[wizardCurrentStep].key;
+    var payload = {};
+    if (stepKey === 'ae') {
+        payload.aeTitle = document.getElementById('wiz-ae-title').value.trim();
+        payload.dicomPort = parseInt(document.getElementById('wiz-dicom-port').value, 10);
+    } else if (stepKey === 'storage') {
+        payload.archivePath = document.getElementById('wiz-archive-path').value.trim();
+        payload.checksumEnabled = document.getElementById('wiz-checksum').checked;
+    } else if (stepKey === 'network') {
+        payload.webPort = parseInt(document.getElementById('wiz-web-port').value, 10);
+        payload.adminPort = parseInt(document.getElementById('wiz-admin-port').value, 10);
+        payload.tlsEnabled = document.getElementById('wiz-tls').checked;
+    }
+
+    var isLastStep = wizardCurrentStep === WIZARD_STEPS.length - 2;
+    var btn = document.getElementById('wizard-next-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving\u2026';
+
+    var mergedConfig = Object.assign({}, wizardSetupData, payload);
+    var promise = isLastStep
+        ? apiFetch('/setup/complete', { method: 'POST', body: JSON.stringify(mergedConfig) })
+        : apiFetch('/setup/advance', { method: 'POST', body: JSON.stringify({ step: stepKey, config: payload }) });
+
+    promise.then(function() {
+        if (isLastStep) toast('Setup complete! Server configuration saved.', 'success');
+        wizardSetupData = mergedConfig;
+        wizardCurrentStep = Math.min(WIZARD_STEPS.length - 1, wizardCurrentStep + 1);
+        renderWizard();
+    }).catch(function(err) {
+        toast('Failed: ' + err.message, 'error');
+    }).finally(function() {
+        btn.disabled = false;
+    });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+(function init() {
+    if (isTokenValid()) {
+        showApp();
+        loadDashboard();
+    } else {
+        showLogin();
+    }
+})();
+</script>
 </body>
 </html>

@@ -114,6 +114,55 @@ public struct ServerConfiguration: Sendable, Equatable {
         }
     }
 
+    /// Admin console HTTP server configuration.
+    public struct Admin: Sendable, Equatable {
+        /// TCP port for the Admin HTTP server.
+        public var port: Int
+
+        /// Whether TLS is enabled for the Admin server.
+        public var tlsEnabled: Bool
+
+        /// Path to the TLS certificate file (PEM format).
+        public var tlsCertificatePath: String?
+
+        /// Path to the TLS private key file (PEM format).
+        public var tlsKeyPath: String?
+
+        /// JWT shared secret for admin session tokens.
+        ///
+        /// > Important: Change this value before deploying to production.
+        public var jwtSecret: String
+
+        /// Session token expiry in seconds (default: 3 600).
+        public var sessionExpirySeconds: Int
+
+        /// Whether the first-run setup wizard has been completed.
+        ///
+        /// Set to `true` by the Setup Wizard handler after all setup steps are
+        /// finished.  When `false` the Admin Console will redirect users to the
+        /// wizard on first login so that a fresh installation can be configured
+        /// before going into production.
+        public var setupCompleted: Bool
+
+        public init(
+            port: Int = 8081,
+            tlsEnabled: Bool = false,
+            tlsCertificatePath: String? = nil,
+            tlsKeyPath: String? = nil,
+            jwtSecret: String = "change-me-in-production",
+            sessionExpirySeconds: Int = 3600,
+            setupCompleted: Bool = false
+        ) {
+            self.port = port
+            self.tlsEnabled = tlsEnabled
+            self.tlsCertificatePath = tlsCertificatePath
+            self.tlsKeyPath = tlsKeyPath
+            self.jwtSecret = jwtSecret
+            self.sessionExpirySeconds = sessionExpirySeconds
+            self.setupCompleted = setupCompleted
+        }
+    }
+
     /// Codec configuration for image transcoding and compressed copy creation.
     public struct Codec: Sendable, Equatable {
         /// Whether on-demand transcoding is enabled (transcode only when a
@@ -155,6 +204,9 @@ public struct ServerConfiguration: Sendable, Equatable {
     /// DICOMweb HTTP server settings.
     public var web: Web
 
+    /// Admin console HTTP server settings.
+    public var admin: Admin
+
     // MARK: - Initialiser
 
     public init(
@@ -162,13 +214,15 @@ public struct ServerConfiguration: Sendable, Equatable {
         storage: Storage = Storage(),
         log: Log = Log(),
         codec: Codec = Codec(),
-        web: Web = Web()
+        web: Web = Web(),
+        admin: Admin = Admin()
     ) {
         self.dicom = dicom
         self.storage = storage
         self.log = log
         self.codec = codec
         self.web = web
+        self.admin = admin
     }
 }
 
@@ -176,7 +230,7 @@ public struct ServerConfiguration: Sendable, Equatable {
 
 extension ServerConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case dicom, storage, log, codec, web
+        case dicom, storage, log, codec, web, admin
     }
 
     public init(from decoder: any Decoder) throws {
@@ -186,6 +240,7 @@ extension ServerConfiguration: Codable {
         self.log = try container.decodeIfPresent(Log.self, forKey: .log) ?? Log()
         self.codec = try container.decodeIfPresent(Codec.self, forKey: .codec) ?? Codec()
         self.web = try container.decodeIfPresent(Web.self, forKey: .web) ?? Web()
+        self.admin = try container.decodeIfPresent(Admin.self, forKey: .admin) ?? Admin()
     }
 }
 
@@ -254,5 +309,23 @@ extension ServerConfiguration.Web: Codable {
         self.tlsCertificatePath = try container.decodeIfPresent(String.self, forKey: .tlsCertificatePath)
         self.tlsKeyPath = try container.decodeIfPresent(String.self, forKey: .tlsKeyPath)
         self.basePath = try container.decodeIfPresent(String.self, forKey: .basePath) ?? ""
+    }
+}
+
+extension ServerConfiguration.Admin: Codable {
+    enum CodingKeys: String, CodingKey {
+        case port, tlsEnabled, tlsCertificatePath, tlsKeyPath,
+             jwtSecret, sessionExpirySeconds, setupCompleted
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.port = try container.decodeIfPresent(Int.self, forKey: .port) ?? 8081
+        self.tlsEnabled = try container.decodeIfPresent(Bool.self, forKey: .tlsEnabled) ?? false
+        self.tlsCertificatePath = try container.decodeIfPresent(String.self, forKey: .tlsCertificatePath)
+        self.tlsKeyPath = try container.decodeIfPresent(String.self, forKey: .tlsKeyPath)
+        self.jwtSecret = try container.decodeIfPresent(String.self, forKey: .jwtSecret) ?? "change-me-in-production"
+        self.sessionExpirySeconds = try container.decodeIfPresent(Int.self, forKey: .sessionExpirySeconds) ?? 3600
+        self.setupCompleted = try container.decodeIfPresent(Bool.self, forKey: .setupCompleted) ?? false
     }
 }

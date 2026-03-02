@@ -57,6 +57,33 @@ struct MayamServerApp {
             // Non-fatal: continue with DICOM listener
         }
 
+        // Initialise and start the Admin console server
+        let authHandler = AdminAuthHandler(
+            jwtSecret: config.admin.jwtSecret,
+            sessionExpirySeconds: config.admin.sessionExpirySeconds
+        )
+        let adminRouter = AdminRouter(
+            auth: authHandler,
+            dashboard: AdminDashboardHandler(),
+            nodes: AdminNodeHandler(),
+            storage: AdminStorageHandler(),
+            logs: AdminLogHandler(),
+            settings: AdminSettingsHandler(configuration: config, adminPort: config.admin.port),
+            setup: AdminSetupHandler(),
+            archivePath: config.storage.archivePath
+        )
+        let adminServer = AdminServer(
+            configuration: config.admin,
+            router: adminRouter,
+            logger: MayamLogger(label: "com.raster-lab.mayam.admin")
+        )
+        do {
+            try await adminServer.start()
+            logger.info("Admin console started on port \(config.admin.port)")
+        } catch {
+            logger.error("Failed to start Admin console: \(error)")
+        }
+
         // Initialise and start the DICOM server actor
         let server = ServerActor(configuration: config, logger: logger)
         try await server.start()
