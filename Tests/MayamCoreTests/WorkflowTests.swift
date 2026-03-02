@@ -1262,7 +1262,7 @@ final class WebhookDeliveryServiceTests: XCTestCase {
         XCTAssertEqual(sig.count, 7 + 64) // "sha256=" + 64 hex chars
     }
 
-    func test_webhookDelivery_computeSignature_samInput_sameOutput() async {
+    func test_webhookDelivery_computeSignature_sameInput_sameOutput() async {
         let service = WebhookDeliveryService(logger: MayamLogger(label: "test.webhook"))
         let payload = Data("test payload".utf8)
         let s1 = await service.computeSignature(payload: payload, secret: "secret")

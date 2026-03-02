@@ -27,10 +27,10 @@ CREATE TABLE IF NOT EXISTS scheduled_procedure_steps (
     scheduled_start_time            TEXT,
     modality                        TEXT        NOT NULL,
     scheduled_performing_physician  TEXT,
-    scheduled_procedure_step_desc   TEXT,
+    scheduled_procedure_step_description TEXT,
     scheduled_station_ae_title      TEXT,
     scheduled_station_name          TEXT,
-    scheduled_procedure_step_loc    TEXT,
+    scheduled_procedure_step_location TEXT,
     status                          TEXT        NOT NULL DEFAULT 'SCHEDULED',
     created_at                      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP
