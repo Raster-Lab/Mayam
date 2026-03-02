@@ -165,22 +165,22 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 9 — Near-Line Storage & Backup 🔲 Not Started
+## Milestone 9 — Near-Line Storage & Backup ✅ Complete
 
 **Goal:** Implement tiered storage, lifecycle policies, and backup/recovery.
 
-- [ ] Implement the **Hierarchical Storage Management (HSM)** engine:
+- [x] Implement the **Hierarchical Storage Management (HSM)** engine:
   - Define storage tiers: Online (SSD/NVMe), Near-Line (NAS/external), Archive (object storage / tape).
   - Policy-driven automatic migration based on age, last-access, modality, or study status.
   - Transparent on-demand recall from near-line to online when queried.
-- [ ] Implement **Storage Commitment SCP** (N-ACTION/N-EVENT-REPORT) — confirm to modalities that studies are safely archived.
-- [ ] Implement scheduled and on-demand **Backup**:
+- [x] Implement **Storage Commitment SCP** (N-ACTION/N-EVENT-REPORT) — confirm to modalities that studies are safely archived.
+- [x] Implement scheduled and on-demand **Backup**:
   - Local backup targets (directory, external drive).
   - Network backup targets (SMB/NFS share).
   - Cloud-compatible object storage (S3-compatible API).
-- [ ] Implement **Point-in-Time Recovery** for the metadata database.
-- [ ] Implement periodic **Integrity Scan** — verify SHA-256 checksums across all archived objects.
-- [ ] Add backup and storage tier management to the web console.
+- [x] Implement **Point-in-Time Recovery** for the metadata database.
+- [x] Implement periodic **Integrity Scan** — verify SHA-256 checksums across all archived objects.
+- [x] Add backup and storage tier management to the web console.
 
 ---
 
