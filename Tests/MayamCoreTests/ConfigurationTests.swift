@@ -154,4 +154,52 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(config.storage.archivePath, "/env/archive")
         XCTAssertEqual(config.log.level, "trace")
     }
+
+    // MARK: - DICOMweb (Web) Configuration Tests
+
+    func test_serverConfigurationWeb_defaults_areCorrect() {
+        let config = ServerConfiguration()
+        XCTAssertEqual(config.web.port, 8080)
+        XCTAssertFalse(config.web.tlsEnabled)
+        XCTAssertNil(config.web.tlsCertificatePath)
+        XCTAssertNil(config.web.tlsKeyPath)
+        XCTAssertEqual(config.web.basePath, "")
+    }
+
+    func test_serverConfigurationWeb_codable_roundTrips() throws {
+        let original = ServerConfiguration(
+            web: .init(port: 8443, tlsEnabled: true, basePath: "/dicomweb")
+        )
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(original)
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(ServerConfiguration.self, from: data)
+        XCTAssertEqual(decoded.web.port, 8443)
+        XCTAssertTrue(decoded.web.tlsEnabled)
+        XCTAssertEqual(decoded.web.basePath, "/dicomweb")
+    }
+
+    func test_configurationLoader_webYAML_parsesCorrectly() throws {
+        let yaml = """
+        web:
+          port: 9090
+          tlsEnabled: false
+          basePath: "/wado"
+        """
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mayam-test-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let configFile = tempDir.appendingPathComponent("web-test.yaml")
+        try yaml.write(to: configFile, atomically: true, encoding: .utf8)
+
+        let config = try ConfigurationLoader.load(from: configFile.path)
+        XCTAssertEqual(config.web.port, 9090)
+        XCTAssertFalse(config.web.tlsEnabled)
+        XCTAssertEqual(config.web.basePath, "/wado")
+        // Unspecified fields default correctly
+        XCTAssertEqual(config.dicom.aeTitle, "MAYAM")
+    }
 }

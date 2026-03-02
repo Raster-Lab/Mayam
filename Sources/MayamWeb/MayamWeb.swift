@@ -5,15 +5,16 @@ import MayamCore
 
 /// The MayamWeb module provides the DICOMweb and Admin REST API layer.
 ///
-/// ## Planned Services
-/// - **WADO-RS** — RESTful DICOM object retrieval.
+/// ## Implemented Services (Milestone 6)
+/// - **WADO-RS** — RESTful DICOM object and metadata retrieval.
 /// - **QIDO-RS** — RESTful study/series/instance queries.
-/// - **STOW-RS** — RESTful DICOM object storage.
-/// - **UPS-RS** — Unified Procedure Step management.
-/// - **Admin API** — Server administration endpoints.
+/// - **STOW-RS** — RESTful DICOM object storage via multipart POST.
+/// - **UPS-RS** — Unified Procedure Step workitem management.
+/// - **WADO-URI** — Legacy single-frame retrieval for backward compatibility.
 ///
-/// > Note: Full implementation is part of Milestones 6 and 7.
+/// > Note: The Admin API is part of Milestone 7.
 public enum MayamWeb {
     /// The current version of the MayamWeb module.
-    public static let version = "0.1.0"
+    public static let version = "0.6.0"
 }
+

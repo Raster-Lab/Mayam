@@ -82,6 +82,38 @@ public struct ServerConfiguration: Sendable, Equatable {
         }
     }
 
+    /// DICOMweb HTTP server configuration.
+    public struct Web: Sendable, Equatable {
+        /// TCP port for the DICOMweb HTTP server.
+        public var port: Int
+
+        /// Whether TLS is enabled for the DICOMweb server.
+        public var tlsEnabled: Bool
+
+        /// Path to the TLS certificate file (PEM format).
+        public var tlsCertificatePath: String?
+
+        /// Path to the TLS private key file (PEM format).
+        public var tlsKeyPath: String?
+
+        /// Base URL path prefix for all DICOMweb endpoints (e.g. `"/dicomweb"`).
+        public var basePath: String
+
+        public init(
+            port: Int = 8080,
+            tlsEnabled: Bool = false,
+            tlsCertificatePath: String? = nil,
+            tlsKeyPath: String? = nil,
+            basePath: String = ""
+        ) {
+            self.port = port
+            self.tlsEnabled = tlsEnabled
+            self.tlsCertificatePath = tlsCertificatePath
+            self.tlsKeyPath = tlsKeyPath
+            self.basePath = basePath
+        }
+    }
+
     /// Codec configuration for image transcoding and compressed copy creation.
     public struct Codec: Sendable, Equatable {
         /// Whether on-demand transcoding is enabled (transcode only when a
@@ -120,18 +152,23 @@ public struct ServerConfiguration: Sendable, Equatable {
     /// Codec settings.
     public var codec: Codec
 
+    /// DICOMweb HTTP server settings.
+    public var web: Web
+
     // MARK: - Initialiser
 
     public init(
         dicom: DICOM = DICOM(),
         storage: Storage = Storage(),
         log: Log = Log(),
-        codec: Codec = Codec()
+        codec: Codec = Codec(),
+        web: Web = Web()
     ) {
         self.dicom = dicom
         self.storage = storage
         self.log = log
         self.codec = codec
+        self.web = web
     }
 }
 
@@ -139,7 +176,7 @@ public struct ServerConfiguration: Sendable, Equatable {
 
 extension ServerConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case dicom, storage, log, codec
+        case dicom, storage, log, codec, web
     }
 
     public init(from decoder: any Decoder) throws {
@@ -148,6 +185,7 @@ extension ServerConfiguration: Codable {
         self.storage = try container.decodeIfPresent(Storage.self, forKey: .storage) ?? Storage()
         self.log = try container.decodeIfPresent(Log.self, forKey: .log) ?? Log()
         self.codec = try container.decodeIfPresent(Codec.self, forKey: .codec) ?? Codec()
+        self.web = try container.decodeIfPresent(Web.self, forKey: .web) ?? Web()
     }
 }
 
@@ -201,5 +239,20 @@ extension ServerConfiguration.Codec: Codable {
         self.onDemandTranscodingEnabled = try container.decodeIfPresent(Bool.self, forKey: .onDemandTranscodingEnabled) ?? true
         self.backgroundTranscodingEnabled = try container.decodeIfPresent(Bool.self, forKey: .backgroundTranscodingEnabled) ?? false
         self.maxConcurrentTranscodings = try container.decodeIfPresent(Int.self, forKey: .maxConcurrentTranscodings) ?? 4
+    }
+}
+
+extension ServerConfiguration.Web: Codable {
+    enum CodingKeys: String, CodingKey {
+        case port, tlsEnabled, tlsCertificatePath, tlsKeyPath, basePath
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.port = try container.decodeIfPresent(Int.self, forKey: .port) ?? 8080
+        self.tlsEnabled = try container.decodeIfPresent(Bool.self, forKey: .tlsEnabled) ?? false
+        self.tlsCertificatePath = try container.decodeIfPresent(String.self, forKey: .tlsCertificatePath)
+        self.tlsKeyPath = try container.decodeIfPresent(String.self, forKey: .tlsKeyPath)
+        self.basePath = try container.decodeIfPresent(String.self, forKey: .basePath) ?? ""
     }
 }

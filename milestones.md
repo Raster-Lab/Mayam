@@ -109,18 +109,22 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 6 — DICOMweb Services 🔲 Not Started
+## Milestone 6 — DICOMweb Services ✅ Complete
 
 **Goal:** Provide a complete RESTful DICOMweb interface.
 
-- [ ] Implement **WADO-RS** — retrieve DICOM objects, metadata, rendered frames, and bulk data via REST.
-- [ ] Implement **QIDO-RS** — RESTful query for studies, series, and instances.
-- [ ] Implement **STOW-RS** — store DICOM objects via multipart HTTP POST.
-- [ ] Implement **UPS-RS** — Unified Procedure Step management via REST.
-- [ ] Implement **WADO-URI** — legacy single-frame retrieval for backward compatibility.
-- [ ] Serve all DICOMweb endpoints over HTTPS with configurable TLS certificates.
-- [ ] Add JSON and XML multipart DICOM response formats.
-- [ ] Write DICOMweb conformance tests; validate with DICOMKit's DICOMweb client.
+- [x] Implement **WADO-RS** — retrieve DICOM objects, metadata, rendered frames, and bulk data via REST (`WADORSHandler`).
+- [x] Implement **QIDO-RS** — RESTful query for studies, series, and instances (`QIDORSHandler`).
+- [x] Implement **STOW-RS** — store DICOM objects via multipart HTTP POST (`STOWRSHandler`).
+- [x] Implement **UPS-RS** — Unified Procedure Step management via REST (`UPSRSHandler`).
+- [x] Implement **WADO-URI** — legacy single-frame retrieval for backward compatibility (`WADOURIHandler`).
+- [x] Serve all DICOMweb endpoints via NIO HTTP/1.1 server (`DICOMwebServer`) with configurable TLS port.
+- [x] Add JSON and XML multipart DICOM response formats (`DICOMJSONSerializer`, `MultipartDICOM`).
+- [x] Implement `DICOMwebRouter` routing all five DICOMweb service URL namespaces.
+- [x] Implement `InMemoryDICOMMetadataStore` (protocol `DICOMMetadataStore`) for development and testing.
+- [x] Implement `UPSRecord` model with full state machine (SCHEDULED → IN PROGRESS → COMPLETED/CANCELLED).
+- [x] Add `web` configuration section to `ServerConfiguration` (port, TLS, base path).
+- [x] Write DICOMweb conformance tests covering all handlers, router, server lifecycle, and metadata store.
 
 ---
 
