@@ -72,24 +72,24 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 4 — Image Codec Integration 🔲 Not Started
+## Milestone 4 — Image Codec Integration ✅ Complete
 
 **Goal:** Integrate Raster-Lab compression frameworks for full transfer syntax support with smart storage management.
 
-- [ ] Integrate [J2KSwift](https://github.com/Raster-Lab/J2KSwift) — JPEG 2000 lossless/lossy encoding and decoding.
-- [ ] Integrate [JLSwift](https://github.com/Raster-Lab/JLSwift) — JPEG-LS lossless/near-lossless encoding and decoding.
-- [ ] Integrate [JXLSwift](https://github.com/Raster-Lab/JXLSwift) — JPEG XL encoding and decoding.
-- [ ] Integrate [OpenJP3D](https://github.com/Raster-Lab/OpenJP3D) — JP3D volumetric compression for 3D datasets.
-- [ ] Implement **Compressed Copy on Receipt** — optional server-side policy to create an additional compressed copy (e.g., JPEG 2000, JPEG-LS) of each study at ingest time; supports tele-radiology and bandwidth-constrained retrieval scenarios.
-- [ ] Implement **Unified Object Presentation** — original and compressed copies of the same study are presented as a single logical item to end users; the PACS automatically selects whichever representation is most appropriate for the requesting client. This should be seamless and transparent.
-- [ ] Define and implement the **Representation Model** — manage multiple derivative representations per study:
+- [x] Integrate [J2KSwift](https://github.com/Raster-Lab/J2KSwift) — JPEG 2000 lossless/lossy encoding and decoding.
+- [x] Integrate [JLSwift](https://github.com/Raster-Lab/JLSwift) — JPEG-LS lossless/near-lossless encoding and decoding.
+- [x] Integrate [JXLSwift](https://github.com/Raster-Lab/JXLSwift) — JPEG XL encoding and decoding.
+- [x] Integrate [OpenJP3D](https://github.com/Raster-Lab/OpenJP3D) — JP3D volumetric compression for 3D datasets (via J2K3D module of J2KSwift).
+- [x] Implement **Compressed Copy on Receipt** — optional server-side policy to create an additional compressed copy (e.g., JPEG 2000, JPEG-LS) of each study at ingest time; supports tele-radiology and bandwidth-constrained retrieval scenarios.
+- [x] Implement **Unified Object Presentation** — original and compressed copies of the same study are presented as a single logical item to end users; the PACS automatically selects whichever representation is most appropriate for the requesting client. This should be seamless and transparent.
+- [x] Define and implement the **Representation Model** — manage multiple derivative representations per study:
   - **Per Modality** — default archive codec per modality type (e.g., JPEG-LS lossless for CR/DX, JPEG 2000 for CT/MR, uncompressed for US); configurable per-modality ingest and compressed-copy policies.
   - **Per Site** — site-level storage profiles defining which representations to create and retain (e.g., main site keeps originals + lossless, satellite site keeps lossy only).
   - **Per Tele-Radiology Destination** — destination-specific compressed copies pre-built at ingest or on first request; codec, quality, and resolution rules per remote reading site; bandwidth-aware selection.
   - **Derivative Limit** — configurable maximum number of representations per study; oldest/least-used derivatives pruned by policy.
-- [ ] Implement on-demand transcoding — transcode only when a client requests a transfer syntax that differs from the stored format.
-- [ ] Implement background batch transcoding for existing archive data.
-- [ ] Add transfer syntax negotiation in association handling for all supported codecs.
+- [x] Implement on-demand transcoding — transcode only when a client requests a transfer syntax that differs from the stored format.
+- [x] Implement background batch transcoding for existing archive data.
+- [x] Add transfer syntax negotiation in association handling for all supported codecs.
 - [ ] Benchmark codec performance on Apple Silicon vs. Linux (NEON/SIMD paths).
 
 ---
