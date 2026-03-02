@@ -159,6 +159,8 @@ public struct AdminRouter: Sendable {
     private let users: AdminUserHandler
     private let ldap: AdminLDAPHandler
     private let archivePath: String
+    private let hsmConfig: ServerConfiguration.HSM
+    private let backupConfig: ServerConfiguration.Backup
 
     // MARK: - Initialisers
 
@@ -175,6 +177,8 @@ public struct AdminRouter: Sendable {
     ///   - users: User management handler.
     ///   - ldap: LDAP configuration handler.
     ///   - archivePath: Root path of the DICOM archive (used for storage stats).
+    ///   - hsmConfig: HSM configuration for tier management.
+    ///   - backupConfig: Backup configuration for backup management.
     public init(
         auth: AdminAuthHandler,
         dashboard: AdminDashboardHandler,
@@ -185,7 +189,9 @@ public struct AdminRouter: Sendable {
         setup: AdminSetupHandler,
         users: AdminUserHandler = AdminUserHandler(userDirectory: UserDirectory()),
         ldap: AdminLDAPHandler = AdminLDAPHandler(),
-        archivePath: String
+        archivePath: String,
+        hsmConfig: ServerConfiguration.HSM = ServerConfiguration.HSM(),
+        backupConfig: ServerConfiguration.Backup = ServerConfiguration.Backup()
     ) {
         self.auth = auth
         self.dashboard = dashboard
@@ -197,6 +203,8 @@ public struct AdminRouter: Sendable {
         self.users = users
         self.ldap = ldap
         self.archivePath = archivePath
+        self.hsmConfig = hsmConfig
+        self.backupConfig = backupConfig
     }
 
     // MARK: - Route
@@ -410,6 +418,18 @@ public struct AdminRouter: Sendable {
         if components == ["ldap", "test"] && method == .post {
             try requirePermission(.manageLDAP, for: claims)
             return try jsonResponse(await ldap.testConnection())
+        }
+
+        // MARK: HSM and Backup routes
+
+        // GET /admin/api/hsm
+        if components == ["hsm"] && method == .get {
+            return try jsonResponse(await storage.getHSMStatus(hsmConfig: hsmConfig))
+        }
+
+        // GET /admin/api/backup
+        if components == ["backup"] && method == .get {
+            return try jsonResponse(await storage.getBackupStatus(backupConfig: backupConfig))
         }
 
         throw AdminError.notFound(resource: path)

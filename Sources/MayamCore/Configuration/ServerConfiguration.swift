@@ -266,6 +266,55 @@ public struct ServerConfiguration: Sendable, Equatable {
         }
     }
 
+    /// Hierarchical Storage Management configuration.
+    public struct HSM: Sendable, Equatable {
+        /// Whether HSM is enabled.
+        public var enabled: Bool
+
+        /// Configured storage tiers.
+        public var tiers: [StorageTierConfiguration]
+
+        /// Migration rules evaluated in order.
+        public var migrationRules: [MigrationRule]
+
+        /// Interval in seconds between automatic migration scans.
+        public var migrationScanIntervalSeconds: Int
+
+        public init(
+            enabled: Bool = false,
+            tiers: [StorageTierConfiguration] = [],
+            migrationRules: [MigrationRule] = [],
+            migrationScanIntervalSeconds: Int = 3600
+        ) {
+            self.enabled = enabled
+            self.tiers = tiers
+            self.migrationRules = migrationRules
+            self.migrationScanIntervalSeconds = migrationScanIntervalSeconds
+        }
+    }
+
+    /// Backup subsystem configuration.
+    public struct Backup: Sendable, Equatable {
+        /// Whether the backup subsystem is enabled.
+        public var enabled: Bool
+
+        /// Configured backup targets.
+        public var targets: [BackupTarget]
+
+        /// The backup schedule for automated runs.
+        public var schedule: BackupSchedule
+
+        public init(
+            enabled: Bool = false,
+            targets: [BackupTarget] = [],
+            schedule: BackupSchedule = BackupSchedule()
+        ) {
+            self.enabled = enabled
+            self.targets = targets
+            self.schedule = schedule
+        }
+    }
+
     /// Codec configuration for image transcoding and compressed copy creation.
     public struct Codec: Sendable, Equatable {
         /// Whether on-demand transcoding is enabled (transcode only when a
@@ -304,6 +353,12 @@ public struct ServerConfiguration: Sendable, Equatable {
     /// Codec settings.
     public var codec: Codec
 
+    /// Hierarchical Storage Management settings.
+    public var hsm: HSM
+
+    /// Backup subsystem settings.
+    public var backup: Backup
+
     /// DICOMweb HTTP server settings.
     public var web: Web
 
@@ -320,6 +375,8 @@ public struct ServerConfiguration: Sendable, Equatable {
         storage: Storage = Storage(),
         log: Log = Log(),
         codec: Codec = Codec(),
+        hsm: HSM = HSM(),
+        backup: Backup = Backup(),
         web: Web = Web(),
         admin: Admin = Admin(),
         ldap: LDAP = LDAP()
@@ -328,6 +385,8 @@ public struct ServerConfiguration: Sendable, Equatable {
         self.storage = storage
         self.log = log
         self.codec = codec
+        self.hsm = hsm
+        self.backup = backup
         self.web = web
         self.admin = admin
         self.ldap = ldap
@@ -338,7 +397,7 @@ public struct ServerConfiguration: Sendable, Equatable {
 
 extension ServerConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case dicom, storage, log, codec, web, admin, ldap
+        case dicom, storage, log, codec, hsm, backup, web, admin, ldap
     }
 
     public init(from decoder: any Decoder) throws {
@@ -347,6 +406,8 @@ extension ServerConfiguration: Codable {
         self.storage = try container.decodeIfPresent(Storage.self, forKey: .storage) ?? Storage()
         self.log = try container.decodeIfPresent(Log.self, forKey: .log) ?? Log()
         self.codec = try container.decodeIfPresent(Codec.self, forKey: .codec) ?? Codec()
+        self.hsm = try container.decodeIfPresent(HSM.self, forKey: .hsm) ?? HSM()
+        self.backup = try container.decodeIfPresent(Backup.self, forKey: .backup) ?? Backup()
         self.web = try container.decodeIfPresent(Web.self, forKey: .web) ?? Web()
         self.admin = try container.decodeIfPresent(Admin.self, forKey: .admin) ?? Admin()
         self.ldap = try container.decodeIfPresent(LDAP.self, forKey: .ldap) ?? LDAP()
@@ -476,5 +537,32 @@ extension ServerConfiguration.LDAP: Codable {
         self.userSearchFilter    = try c.decodeIfPresent(String.self, forKey: .userSearchFilter)    ?? "(objectClass=person)"
         self.groupSearchBase     = try c.decodeIfPresent(String.self, forKey: .groupSearchBase)     ?? ""
         self.schema              = try c.decodeIfPresent(Schema.self, forKey: .schema)              ?? Schema()
+    }
+}
+
+extension ServerConfiguration.HSM: Codable {
+    enum CodingKeys: String, CodingKey {
+        case enabled, tiers, migrationRules, migrationScanIntervalSeconds
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        self.tiers = try c.decodeIfPresent([StorageTierConfiguration].self, forKey: .tiers) ?? []
+        self.migrationRules = try c.decodeIfPresent([MigrationRule].self, forKey: .migrationRules) ?? []
+        self.migrationScanIntervalSeconds = try c.decodeIfPresent(Int.self, forKey: .migrationScanIntervalSeconds) ?? 3600
+    }
+}
+
+extension ServerConfiguration.Backup: Codable {
+    enum CodingKeys: String, CodingKey {
+        case enabled, targets, schedule
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        self.targets = try c.decodeIfPresent([BackupTarget].self, forKey: .targets) ?? []
+        self.schedule = try c.decodeIfPresent(BackupSchedule.self, forKey: .schedule) ?? BackupSchedule()
     }
 }

@@ -6,7 +6,8 @@ import MayamCore
 
 // MARK: - AdminStorageHandler
 
-/// Provides storage pool information and archive integrity checking.
+/// Provides storage pool information, archive integrity checking, and
+/// HSM / backup management for the admin web console.
 ///
 /// Storage statistics are derived from the file-system volume that hosts the
 /// archive path.  The integrity check is a basic walk of the archive directory
@@ -79,6 +80,32 @@ public actor AdminStorageHandler {
             checkedCount: checkedCount,
             errorCount: 0,
             status: "complete"
+        )
+    }
+
+    /// Returns the current HSM status including tier statistics.
+    ///
+    /// - Parameter hsmConfig: The HSM configuration.
+    /// - Returns: An ``HSMStatus`` describing the current state.
+    public func getHSMStatus(hsmConfig: ServerConfiguration.HSM) async -> HSMStatus {
+        HSMStatus(
+            enabled: hsmConfig.enabled,
+            tierCount: hsmConfig.tiers.count,
+            migrationRuleCount: hsmConfig.migrationRules.count,
+            migrationScanIntervalSeconds: hsmConfig.migrationScanIntervalSeconds
+        )
+    }
+
+    /// Returns the current backup status.
+    ///
+    /// - Parameter backupConfig: The backup configuration.
+    /// - Returns: A ``BackupStatus`` describing the current state.
+    public func getBackupStatus(backupConfig: ServerConfiguration.Backup) async -> AdminBackupStatus {
+        AdminBackupStatus(
+            enabled: backupConfig.enabled,
+            targetCount: backupConfig.targets.count,
+            enabledTargetCount: backupConfig.targets.filter(\.enabled).count,
+            scheduleIntervalSeconds: backupConfig.schedule.intervalSeconds
         )
     }
 }

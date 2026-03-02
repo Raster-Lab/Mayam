@@ -351,3 +351,47 @@ public struct AdminAPIResponse: Codable, Sendable {
         self.error = error
     }
 }
+
+// MARK: - HSMStatus
+
+/// Status of the Hierarchical Storage Management engine for the admin console.
+public struct HSMStatus: Codable, Sendable {
+    /// Whether HSM is enabled.
+    public let enabled: Bool
+    /// Number of configured storage tiers.
+    public let tierCount: Int
+    /// Number of configured migration rules.
+    public let migrationRuleCount: Int
+    /// Interval in seconds between migration scans.
+    public let migrationScanIntervalSeconds: Int
+
+    /// Creates an HSM status.
+    public init(enabled: Bool, tierCount: Int, migrationRuleCount: Int, migrationScanIntervalSeconds: Int) {
+        self.enabled = enabled
+        self.tierCount = tierCount
+        self.migrationRuleCount = migrationRuleCount
+        self.migrationScanIntervalSeconds = migrationScanIntervalSeconds
+    }
+}
+
+// MARK: - AdminBackupStatus
+
+/// Status of the backup subsystem for the admin console.
+public struct AdminBackupStatus: Codable, Sendable {
+    /// Whether the backup subsystem is enabled.
+    public let enabled: Bool
+    /// Total number of configured backup targets.
+    public let targetCount: Int
+    /// Number of enabled backup targets.
+    public let enabledTargetCount: Int
+    /// Interval in seconds between scheduled backup runs.
+    public let scheduleIntervalSeconds: Int
+
+    /// Creates a backup status.
+    public init(enabled: Bool, targetCount: Int, enabledTargetCount: Int, scheduleIntervalSeconds: Int) {
+        self.enabled = enabled
+        self.targetCount = targetCount
+        self.enabledTargetCount = enabledTargetCount
+        self.scheduleIntervalSeconds = scheduleIntervalSeconds
+    }
+}
