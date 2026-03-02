@@ -316,8 +316,11 @@ public struct AdminRouter: Sendable {
         if components == ["logs"] && method == .get {
             let level = request.queryParams["level"]
             let label = request.queryParams["label"]
-            let limit = Int(request.queryParams["limit"] ?? "") ?? 100
-            let offset = Int(request.queryParams["offset"] ?? "") ?? 0
+            let rawLimit = Int(request.queryParams["limit"] ?? "") ?? 100
+            let rawOffset = Int(request.queryParams["offset"] ?? "") ?? 0
+            // Clamp to safe bounds: limit 1–1 000, offset ≥ 0.
+            let limit = min(max(1, rawLimit), 1_000)
+            let offset = max(0, rawOffset)
             return try jsonResponse(await logs.getLogs(level: level, label: label, limit: limit, offset: offset))
         }
 

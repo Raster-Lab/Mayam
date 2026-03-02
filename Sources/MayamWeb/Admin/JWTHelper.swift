@@ -64,8 +64,7 @@ public enum JWTHelper: Sendable {
     ///   - secret: Shared secret used for HMAC-SHA256 signing.
     ///   - expirySeconds: Number of seconds from now until the token expires.
     /// - Returns: A compact JWT string.
-    /// - Throws: Never throws in the current implementation; declared `throws`
-    ///   for forward compatibility.
+    /// - Throws: If JSON serialisation of the claims fails.
     public static func generateToken(
         subject: String,
         role: String,
@@ -75,9 +74,22 @@ public enum JWTHelper: Sendable {
         let headerJSON = #"{"alg":"HS256","typ":"JWT"}"#
         let now = Int(Date().timeIntervalSince1970)
         let exp = now + expirySeconds
-        let payloadJSON = """
-        {"sub":"\(subject)","role":"\(role)","iat":\(now),"exp":\(exp)}
-        """
+
+        // Use JSONSerialization to safely encode claim values and avoid injection.
+        let claims: [String: Any] = [
+            "sub": subject,
+            "role": role,
+            "iat": now,
+            "exp": exp
+        ]
+        let payloadData = try JSONSerialization.data(
+            withJSONObject: claims,
+            options: [.sortedKeys]
+        )
+        guard let payloadJSON = String(data: payloadData, encoding: .utf8) else {
+            throw JWTError.invalidClaims
+        }
+
         let headerEncoded = base64URLEncode(Data(headerJSON.utf8))
         let payloadEncoded = base64URLEncode(Data(payloadJSON.utf8))
         let signingInput = "\(headerEncoded).\(payloadEncoded)"
