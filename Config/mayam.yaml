@@ -5,6 +5,9 @@ dicom:
   aeTitle: "MAYAM"
   port: 11112
   maxAssociations: 64
+  tlsEnabled: false
+  # tlsCertificatePath: "/etc/mayam/certs/server.pem"
+  # tlsKeyPath: "/etc/mayam/certs/server-key.pem"
 
 storage:
   archivePath: "/var/lib/mayam/archive"

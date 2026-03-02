@@ -31,17 +31,17 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 
 ---
 
-## Milestone 2 — DICOM Association & Verification Service 🔲 Not Started
+## Milestone 2 — DICOM Association & Verification Service ✅ Complete
 
 **Goal:** Accept inbound DICOM TCP connections and support the C-ECHO service.
 
-- [ ] Implement the DICOM Upper Layer Protocol (association negotiation, A-ASSOCIATE, A-RELEASE, A-ABORT) using Swift NIO.
-- [ ] Build the Service Class Provider (SCP) dispatcher that routes incoming DIMSE commands to service handlers.
-- [ ] Implement **C-ECHO SCP** — the simplest verification service, to prove end-to-end association handling.
-- [ ] Implement **C-ECHO SCU** — outbound verification for testing connectivity to remote nodes.
-- [ ] Support configurable AE Title, port, and accepted presentation contexts.
-- [ ] Add TLS 1.3 support for secure DICOM associations (DICOM PS3.15).
-- [ ] Write integration tests using DICOMKit's SCU tools.
+- [x] Implement the DICOM Upper Layer Protocol (association negotiation, A-ASSOCIATE, A-RELEASE, A-ABORT) using Swift NIO.
+- [x] Build the Service Class Provider (SCP) dispatcher that routes incoming DIMSE commands to service handlers.
+- [x] Implement **C-ECHO SCP** — the simplest verification service, to prove end-to-end association handling.
+- [x] Implement **C-ECHO SCU** — outbound verification for testing connectivity to remote nodes.
+- [x] Support configurable AE Title, port, and accepted presentation contexts.
+- [x] Add TLS 1.3 support for secure DICOM associations (DICOM PS3.15).
+- [x] Write integration tests using DICOMKit's SCU tools.
 
 ---
 
@@ -301,7 +301,7 @@ This document defines the phased roadmap for Mayam Server. Each milestone is a s
 | # | Milestone | Status | Key Deliverable |
 |---|---|---|---|
 | 1 | Project Bootstrap & Core Infrastructure | ✅ Complete | SPM workspace, CI, architecture foundations |
-| 2 | DICOM Association & Verification | 🔲 Not Started | C-ECHO SCP/SCU, TCP association handling |
+| 2 | DICOM Association & Verification | ✅ Complete | C-ECHO SCP/SCU, TCP association handling |
 | 3 | Storage Service | 🔲 Not Started | C-STORE SCP/SCU, on-disk archive, metadata DB (PostgreSQL 18.3 primary; SwiftData/CoreData macOS embedded; SQLite Linux embedded), store-as-received, serve-as-stored, ZIP/TAR+Zstd packaging, storage policy matrix, Delete Protect & Privacy Flag |
 | 4 | Image Codec Integration | 🔲 Not Started | J2KSwift, JLSwift, JXLSwift, OpenJP3D, compressed copy on receipt, unified object presentation, representation model |
 | 5 | Query/Retrieve Services | 🔲 Not Started | C-FIND, C-MOVE, C-GET SCP/SCU |

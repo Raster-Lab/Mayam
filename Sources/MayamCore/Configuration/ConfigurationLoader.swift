@@ -70,6 +70,9 @@ public enum ConfigurationLoader: Sendable {
     /// - `MAYAM_DICOM_AE_TITLE` → ``ServerConfiguration/DICOM/aeTitle``
     /// - `MAYAM_DICOM_PORT` → ``ServerConfiguration/DICOM/port``
     /// - `MAYAM_DICOM_MAX_ASSOCIATIONS` → ``ServerConfiguration/DICOM/maxAssociations``
+    /// - `MAYAM_DICOM_TLS_ENABLED` → ``ServerConfiguration/DICOM/tlsEnabled``
+    /// - `MAYAM_DICOM_TLS_CERTIFICATE_PATH` → ``ServerConfiguration/DICOM/tlsCertificatePath``
+    /// - `MAYAM_DICOM_TLS_KEY_PATH` → ``ServerConfiguration/DICOM/tlsKeyPath``
     /// - `MAYAM_STORAGE_ARCHIVE_PATH` → ``ServerConfiguration/Storage/archivePath``
     /// - `MAYAM_STORAGE_CHECKSUM_ENABLED` → ``ServerConfiguration/Storage/checksumEnabled``
     /// - `MAYAM_LOG_LEVEL` → ``ServerConfiguration/Log/level``
@@ -84,6 +87,16 @@ public enum ConfigurationLoader: Sendable {
         }
         if let maxString = env["MAYAM_DICOM_MAX_ASSOCIATIONS"], let max = Int(maxString) {
             config.dicom.maxAssociations = max
+        }
+        if let tlsString = env["MAYAM_DICOM_TLS_ENABLED"] {
+            config.dicom.tlsEnabled = tlsString.lowercased() == "true"
+                || tlsString == "1"
+        }
+        if let certPath = env["MAYAM_DICOM_TLS_CERTIFICATE_PATH"] {
+            config.dicom.tlsCertificatePath = certPath
+        }
+        if let keyPath = env["MAYAM_DICOM_TLS_KEY_PATH"] {
+            config.dicom.tlsKeyPath = keyPath
         }
         if let archivePath = env["MAYAM_STORAGE_ARCHIVE_PATH"] {
             config.storage.archivePath = archivePath

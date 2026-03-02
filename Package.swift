@@ -31,7 +31,9 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/Raster-Lab/DICOMKit.git", branch: "main"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
-        .package(url: "https://github.com/jpsim/Yams.git", from: "5.3.1")
+        .package(url: "https://github.com/jpsim/Yams.git", from: "5.3.1"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
+        .package(url: "https://github.com/apple/swift-nio-ssl.git", from: "2.26.0")
     ],
     targets: [
         // MARK: - MayamServer (Main Entry Point)
@@ -48,8 +50,13 @@ let package = Package(
             name: "MayamCore",
             dependencies: [
                 .product(name: "DICOMKit", package: "DICOMKit"),
+                .product(name: "DICOMNetwork", package: "DICOMKit"),
                 .product(name: "Logging", package: "swift-log"),
-                .product(name: "Yams", package: "Yams")
+                .product(name: "Yams", package: "Yams"),
+                .product(name: "NIO", package: "swift-nio"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
+                .product(name: "NIOSSL", package: "swift-nio-ssl")
             ],
             resources: [
                 .copy("Database/Migrations")
@@ -84,7 +91,10 @@ let package = Package(
         // MARK: - Test Targets
         .testTarget(
             name: "MayamCoreTests",
-            dependencies: ["MayamCore"]
+            dependencies: [
+                "MayamCore",
+                .product(name: "NIOEmbedded", package: "swift-nio")
+            ]
         ),
         .testTarget(
             name: "MayamWebTests",

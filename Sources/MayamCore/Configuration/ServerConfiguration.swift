@@ -23,14 +23,29 @@ public struct ServerConfiguration: Sendable, Equatable {
         /// Maximum number of concurrent associations.
         public var maxAssociations: Int
 
+        /// Whether TLS 1.3 is enabled for DICOM associations (DICOM PS3.15).
+        public var tlsEnabled: Bool
+
+        /// Path to the TLS certificate file (PEM format).
+        public var tlsCertificatePath: String?
+
+        /// Path to the TLS private key file (PEM format).
+        public var tlsKeyPath: String?
+
         public init(
             aeTitle: String = "MAYAM",
             port: Int = 11112,
-            maxAssociations: Int = 64
+            maxAssociations: Int = 64,
+            tlsEnabled: Bool = false,
+            tlsCertificatePath: String? = nil,
+            tlsKeyPath: String? = nil
         ) {
             self.aeTitle = aeTitle
             self.port = port
             self.maxAssociations = maxAssociations
+            self.tlsEnabled = tlsEnabled
+            self.tlsCertificatePath = tlsCertificatePath
+            self.tlsKeyPath = tlsKeyPath
         }
     }
 
@@ -102,7 +117,7 @@ extension ServerConfiguration: Codable {
 
 extension ServerConfiguration.DICOM: Codable {
     enum CodingKeys: String, CodingKey {
-        case aeTitle, port, maxAssociations
+        case aeTitle, port, maxAssociations, tlsEnabled, tlsCertificatePath, tlsKeyPath
     }
 
     public init(from decoder: any Decoder) throws {
@@ -110,6 +125,9 @@ extension ServerConfiguration.DICOM: Codable {
         self.aeTitle = try container.decodeIfPresent(String.self, forKey: .aeTitle) ?? "MAYAM"
         self.port = try container.decodeIfPresent(Int.self, forKey: .port) ?? 11112
         self.maxAssociations = try container.decodeIfPresent(Int.self, forKey: .maxAssociations) ?? 64
+        self.tlsEnabled = try container.decodeIfPresent(Bool.self, forKey: .tlsEnabled) ?? false
+        self.tlsCertificatePath = try container.decodeIfPresent(String.self, forKey: .tlsCertificatePath)
+        self.tlsKeyPath = try container.decodeIfPresent(String.self, forKey: .tlsKeyPath)
     }
 }
 
