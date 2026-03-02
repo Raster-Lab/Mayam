@@ -147,20 +147,20 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 8 — User Management & LDAP Integration 🔲 Not Started
+## Milestone 8 — User Management & LDAP Integration ✅ Complete
 
 **Goal:** Implement user authentication, authorisation, and DICOM LDAP configuration.
 
-- [ ] Implement LDAP client for user authentication (bind) and directory queries.
-- [ ] Support Active Directory and standard OpenLDAP schemas.
-- [ ] Implement the **DICOM LDAP Configuration** schema (DICOM PS3.15 Annex H) for AE Title and network configuration storage.
-- [ ] Implement **Role-Based Access Control (RBAC)** with predefined roles:
+- [x] Implement LDAP client for user authentication (bind) and directory queries.
+- [x] Support Active Directory and standard OpenLDAP schemas.
+- [x] Implement the **DICOM LDAP Configuration** schema (DICOM PS3.15 Annex H) for AE Title and network configuration storage.
+- [x] Implement **Role-Based Access Control (RBAC)** with predefined roles:
   - Administrator — full system access.
   - Technologist — node management, study routing, limited settings.
   - Physician — query/retrieve, DICOMweb access, read-only admin.
   - Auditor — log access and compliance reporting.
-- [ ] Support local fallback accounts when LDAP is unavailable.
-- [ ] Add user and role management screens to the web console.
+- [x] Support local fallback accounts when LDAP is unavailable.
+- [x] Add user and role management screens to the web console.
 - [ ] Write integration tests against an embedded LDAP test server.
 
 ---
@@ -311,7 +311,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 5 | Query/Retrieve Services | ✅ Complete | C-FIND, C-MOVE, C-GET SCP/SCU, query performance indexes |
 | 6 | DICOMweb Services | 🔲 Not Started | WADO-RS, QIDO-RS, STOW-RS, UPS-RS |
 | 7 | Web Administration Console | ✅ Complete | Admin REST API (JWT auth, CRUD nodes, storage, logs, settings, setup wizard), responsive web console SPA |
-| 8 | User Management & LDAP | 🔲 Not Started | LDAP auth, RBAC, DICOM LDAP configuration |
+| 8 | User Management & LDAP | ✅ Complete | LDAP auth, RBAC, DICOM LDAP configuration |
 | 9 | Near-Line Storage & Backup | 🔲 Not Started | HSM, storage commitment, backup & recovery |
 | 10 | Worklist, MPPS & Workflow | 🔲 Not Started | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |
 | 11 | HL7 & FHIR Interoperability | 🔲 Not Started | HL7 v2.x MLLP (via HL7kit HL7v2Kit), FHIR R4 resources (via HL7kit FHIRkit); requires `ImagingStudy` & `Endpoint` additions to HL7kit |

@@ -163,6 +163,109 @@ public struct ServerConfiguration: Sendable, Equatable {
         }
     }
 
+    /// LDAP / Active Directory integration configuration.
+    public struct LDAP: Sendable, Equatable {
+
+        /// Schema-mapping configuration for an LDAP directory.
+        public struct Schema: Sendable, Equatable {
+            /// Attribute used as the login username (`uid` for OpenLDAP,
+            /// `sAMAccountName` for Active Directory).
+            public var usernameAttribute: String
+            /// Attribute containing the user's e-mail address (typically `mail`).
+            public var emailAttribute: String
+            /// Attribute containing the user's display name (typically `cn`).
+            public var displayNameAttribute: String
+            /// Attribute listing group DNs the user is a member of (typically `memberOf`).
+            public var memberOfAttribute: String
+            /// DN of the group whose members receive the `.administrator` role.
+            public var adminGroupDN: String
+            /// DN of the group whose members receive the `.technologist` role.
+            public var techGroupDN: String
+            /// DN of the group whose members receive the `.physician` role.
+            public var physicianGroupDN: String
+            /// DN of the group whose members receive the `.auditor` role.
+            public var auditorGroupDN: String
+
+            /// Creates a schema mapping.
+            ///
+            /// - Parameters:
+            ///   - usernameAttribute: Username attribute name.
+            ///   - emailAttribute: E-mail attribute name.
+            ///   - displayNameAttribute: Display name attribute name.
+            ///   - memberOfAttribute: Group membership attribute name.
+            ///   - adminGroupDN: Administrator group DN.
+            ///   - techGroupDN: Technologist group DN.
+            ///   - physicianGroupDN: Physician group DN.
+            ///   - auditorGroupDN: Auditor group DN.
+            public init(
+                usernameAttribute: String = "uid",
+                emailAttribute: String = "mail",
+                displayNameAttribute: String = "cn",
+                memberOfAttribute: String = "memberOf",
+                adminGroupDN: String = "",
+                techGroupDN: String = "",
+                physicianGroupDN: String = "",
+                auditorGroupDN: String = ""
+            ) {
+                self.usernameAttribute = usernameAttribute
+                self.emailAttribute = emailAttribute
+                self.displayNameAttribute = displayNameAttribute
+                self.memberOfAttribute = memberOfAttribute
+                self.adminGroupDN = adminGroupDN
+                self.techGroupDN = techGroupDN
+                self.physicianGroupDN = physicianGroupDN
+                self.auditorGroupDN = auditorGroupDN
+            }
+        }
+
+        /// Whether LDAP integration is enabled.
+        public var enabled: Bool
+        /// Hostname or IP address of the LDAP server.
+        public var host: String
+        /// TCP port of the LDAP server (389 for plain, 636 for LDAPS).
+        public var port: Int
+        /// Whether to use TLS (LDAPS or StartTLS) for the connection.
+        public var useTLS: Bool
+        /// Distinguished Name used to bind when searching for user entries.
+        public var serviceBindDN: String
+        /// Password for the service bind DN.
+        public var serviceBindPassword: String
+        /// Base DN under which user searches are performed.
+        public var baseDN: String
+        /// LDAP search filter template; `%s` is replaced with the username.
+        /// Example: `(objectClass=person)`.
+        public var userSearchFilter: String
+        /// Base DN under which group searches are performed.
+        public var groupSearchBase: String
+        /// Directory schema mapping configuration.
+        public var schema: Schema
+
+        /// Creates an LDAP configuration.
+        public init(
+            enabled: Bool = false,
+            host: String = "",
+            port: Int = 389,
+            useTLS: Bool = false,
+            serviceBindDN: String = "",
+            serviceBindPassword: String = "",
+            baseDN: String = "",
+            userSearchFilter: String = "(objectClass=person)",
+            groupSearchBase: String = "",
+            schema: Schema = Schema()
+        ) {
+            self.enabled = enabled
+            self.host = host
+            self.port = port
+            self.useTLS = useTLS
+            self.serviceBindDN = serviceBindDN
+            self.serviceBindPassword = serviceBindPassword
+            self.baseDN = baseDN
+            self.userSearchFilter = userSearchFilter
+            self.groupSearchBase = groupSearchBase
+            self.schema = schema
+        }
+    }
+
     /// Codec configuration for image transcoding and compressed copy creation.
     public struct Codec: Sendable, Equatable {
         /// Whether on-demand transcoding is enabled (transcode only when a
@@ -207,6 +310,9 @@ public struct ServerConfiguration: Sendable, Equatable {
     /// Admin console HTTP server settings.
     public var admin: Admin
 
+    /// LDAP / Active Directory integration settings.
+    public var ldap: LDAP
+
     // MARK: - Initialiser
 
     public init(
@@ -215,7 +321,8 @@ public struct ServerConfiguration: Sendable, Equatable {
         log: Log = Log(),
         codec: Codec = Codec(),
         web: Web = Web(),
-        admin: Admin = Admin()
+        admin: Admin = Admin(),
+        ldap: LDAP = LDAP()
     ) {
         self.dicom = dicom
         self.storage = storage
@@ -223,6 +330,7 @@ public struct ServerConfiguration: Sendable, Equatable {
         self.codec = codec
         self.web = web
         self.admin = admin
+        self.ldap = ldap
     }
 }
 
@@ -230,7 +338,7 @@ public struct ServerConfiguration: Sendable, Equatable {
 
 extension ServerConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case dicom, storage, log, codec, web, admin
+        case dicom, storage, log, codec, web, admin, ldap
     }
 
     public init(from decoder: any Decoder) throws {
@@ -241,6 +349,7 @@ extension ServerConfiguration: Codable {
         self.codec = try container.decodeIfPresent(Codec.self, forKey: .codec) ?? Codec()
         self.web = try container.decodeIfPresent(Web.self, forKey: .web) ?? Web()
         self.admin = try container.decodeIfPresent(Admin.self, forKey: .admin) ?? Admin()
+        self.ldap = try container.decodeIfPresent(LDAP.self, forKey: .ldap) ?? LDAP()
     }
 }
 
@@ -327,5 +436,45 @@ extension ServerConfiguration.Admin: Codable {
         self.jwtSecret = try container.decodeIfPresent(String.self, forKey: .jwtSecret) ?? "change-me-in-production"
         self.sessionExpirySeconds = try container.decodeIfPresent(Int.self, forKey: .sessionExpirySeconds) ?? 3600
         self.setupCompleted = try container.decodeIfPresent(Bool.self, forKey: .setupCompleted) ?? false
+    }
+}
+
+extension ServerConfiguration.LDAP.Schema: Codable {
+    enum CodingKeys: String, CodingKey {
+        case usernameAttribute, emailAttribute, displayNameAttribute, memberOfAttribute
+        case adminGroupDN, techGroupDN, physicianGroupDN, auditorGroupDN
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.usernameAttribute    = try c.decodeIfPresent(String.self, forKey: .usernameAttribute)    ?? "uid"
+        self.emailAttribute       = try c.decodeIfPresent(String.self, forKey: .emailAttribute)       ?? "mail"
+        self.displayNameAttribute = try c.decodeIfPresent(String.self, forKey: .displayNameAttribute) ?? "cn"
+        self.memberOfAttribute    = try c.decodeIfPresent(String.self, forKey: .memberOfAttribute)    ?? "memberOf"
+        self.adminGroupDN         = try c.decodeIfPresent(String.self, forKey: .adminGroupDN)         ?? ""
+        self.techGroupDN          = try c.decodeIfPresent(String.self, forKey: .techGroupDN)          ?? ""
+        self.physicianGroupDN     = try c.decodeIfPresent(String.self, forKey: .physicianGroupDN)     ?? ""
+        self.auditorGroupDN       = try c.decodeIfPresent(String.self, forKey: .auditorGroupDN)       ?? ""
+    }
+}
+
+extension ServerConfiguration.LDAP: Codable {
+    enum CodingKeys: String, CodingKey {
+        case enabled, host, port, useTLS, serviceBindDN, serviceBindPassword
+        case baseDN, userSearchFilter, groupSearchBase, schema
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.enabled             = try c.decodeIfPresent(Bool.self,   forKey: .enabled)             ?? false
+        self.host                = try c.decodeIfPresent(String.self, forKey: .host)                ?? ""
+        self.port                = try c.decodeIfPresent(Int.self,    forKey: .port)                ?? 389
+        self.useTLS              = try c.decodeIfPresent(Bool.self,   forKey: .useTLS)              ?? false
+        self.serviceBindDN       = try c.decodeIfPresent(String.self, forKey: .serviceBindDN)       ?? ""
+        self.serviceBindPassword = try c.decodeIfPresent(String.self, forKey: .serviceBindPassword) ?? ""
+        self.baseDN              = try c.decodeIfPresent(String.self, forKey: .baseDN)              ?? ""
+        self.userSearchFilter    = try c.decodeIfPresent(String.self, forKey: .userSearchFilter)    ?? "(objectClass=person)"
+        self.groupSearchBase     = try c.decodeIfPresent(String.self, forKey: .groupSearchBase)     ?? ""
+        self.schema              = try c.decodeIfPresent(Schema.self, forKey: .schema)              ?? Schema()
     }
 }

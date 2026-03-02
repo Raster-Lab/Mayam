@@ -2,6 +2,7 @@
 // Mayam — Admin API Models
 
 import Foundation
+import MayamCore
 
 // MARK: - DicomNode
 
@@ -87,20 +88,6 @@ public struct DicomNode: Identifiable, Codable, Sendable, Equatable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
-}
-
-// MARK: - AdminRole
-
-/// Administrative role assigned to an admin user.
-public enum AdminRole: String, Codable, Sendable, CaseIterable {
-    /// Full system administration access.
-    case administrator
-    /// Radiographer / radiologic technologist access.
-    case technologist
-    /// Clinician read-only access.
-    case physician
-    /// Audit-log read-only access.
-    case auditor
 }
 
 // MARK: - AdminUser
@@ -317,50 +304,19 @@ public struct LogEntry: Codable, Sendable {
     }
 }
 
-// MARK: - AdminError
+// MARK: - ChangePasswordRequest
 
-/// Errors that may occur during admin API operations.
-public enum AdminError: Error, Sendable, CustomStringConvertible {
+/// Request body for changing a user's password.
+public struct ChangePasswordRequest: Codable, Sendable {
+    /// The user's current plaintext password.
+    public let oldPassword: String
+    /// The desired new plaintext password.
+    public let newPassword: String
 
-    /// The request is not authenticated or the token is invalid/expired.
-    case unauthorised
-    /// The requested resource was not found.
-    case notFound(resource: String)
-    /// The request body or parameters are invalid.
-    case badRequest(reason: String)
-    /// The operation conflicts with current server state.
-    case conflict(reason: String)
-    /// An unexpected internal error occurred.
-    case internalError(underlying: any Error)
-
-    // MARK: - HTTP Status Code
-
-    /// The HTTP status code associated with this error.
-    public var httpStatusCode: UInt {
-        switch self {
-        case .unauthorised:         return 401
-        case .notFound:             return 404
-        case .badRequest:           return 400
-        case .conflict:             return 409
-        case .internalError:        return 500
-        }
-    }
-
-    // MARK: - CustomStringConvertible
-
-    public var description: String {
-        switch self {
-        case .unauthorised:
-            return "Unauthorised: missing or invalid authentication token"
-        case .notFound(let r):
-            return "Not found: \(r)"
-        case .badRequest(let r):
-            return "Bad request: \(r)"
-        case .conflict(let r):
-            return "Conflict: \(r)"
-        case .internalError(let e):
-            return "Internal error: \(e)"
-        }
+    /// Creates a change-password request.
+    public init(oldPassword: String, newPassword: String) {
+        self.oldPassword = oldPassword
+        self.newPassword = newPassword
     }
 }
 

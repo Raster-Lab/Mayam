@@ -156,6 +156,8 @@ public struct AdminRouter: Sendable {
     private let logs: AdminLogHandler
     private let settings: AdminSettingsHandler
     private let setup: AdminSetupHandler
+    private let users: AdminUserHandler
+    private let ldap: AdminLDAPHandler
     private let archivePath: String
 
     // MARK: - Initialisers
@@ -170,6 +172,8 @@ public struct AdminRouter: Sendable {
     ///   - logs: Log buffer handler.
     ///   - settings: Settings handler.
     ///   - setup: Setup wizard handler.
+    ///   - users: User management handler.
+    ///   - ldap: LDAP configuration handler.
     ///   - archivePath: Root path of the DICOM archive (used for storage stats).
     public init(
         auth: AdminAuthHandler,
@@ -179,6 +183,8 @@ public struct AdminRouter: Sendable {
         logs: AdminLogHandler,
         settings: AdminSettingsHandler,
         setup: AdminSetupHandler,
+        users: AdminUserHandler = AdminUserHandler(userDirectory: UserDirectory()),
+        ldap: AdminLDAPHandler = AdminLDAPHandler(),
         archivePath: String
     ) {
         self.auth = auth
@@ -188,6 +194,8 @@ public struct AdminRouter: Sendable {
         self.logs = logs
         self.settings = settings
         self.setup = setup
+        self.users = users
+        self.ldap = ldap
         self.archivePath = archivePath
     }
 
@@ -257,7 +265,7 @@ public struct AdminRouter: Sendable {
         }
 
         // MARK: Authenticated routes — validate bearer token first.
-        _ = try await requireAuth(from: request)
+        let claims = try await requireAuth(from: request)
 
         // GET /admin/api/dashboard
         if components == ["dashboard"] && method == .get {
@@ -335,10 +343,79 @@ public struct AdminRouter: Sendable {
             return try jsonResponse(await settings.updateSettings(payload))
         }
 
+        // MARK: User management routes
+
+        // GET /admin/api/users
+        if components == ["users"] && method == .get {
+            try requirePermission(.manageUsers, for: claims)
+            return try jsonResponse(await users.listUsers())
+        }
+
+        // POST /admin/api/users
+        if components == ["users"] && method == .post {
+            try requirePermission(.manageUsers, for: claims)
+            let req: CreateUserRequest = try decodeBody(request.body)
+            return try jsonResponse(try await users.createUser(req), statusCode: 201)
+        }
+
+        // GET /admin/api/users/{username}
+        if components.count == 2 && components[0] == "users" && method == .get {
+            try requirePermission(.manageUsers, for: claims)
+            return try jsonResponse(try await users.getUser(username: components[1]))
+        }
+
+        // PUT /admin/api/users/{username}
+        if components.count == 2 && components[0] == "users" && method == .put {
+            try requirePermission(.manageUsers, for: claims)
+            let req: UpdateUserRequest = try decodeBody(request.body)
+            return try jsonResponse(try await users.updateUser(username: components[1], req: req))
+        }
+
+        // DELETE /admin/api/users/{username}
+        if components.count == 2 && components[0] == "users" && method == .delete {
+            try requirePermission(.manageUsers, for: claims)
+            try await users.deleteUser(username: components[1])
+            return AdminResponse.noContent()
+        }
+
+        // POST /admin/api/users/{username}/password
+        if components.count == 3 && components[0] == "users" && components[2] == "password" && method == .post {
+            // Requires manageUsers permission OR the user is changing their own password.
+            let targetUsername = components[1]
+            let isSelf = claims.subject == targetUsername
+            if !isSelf {
+                try requirePermission(.manageUsers, for: claims)
+            }
+            let req: ChangePasswordRequest = try decodeBody(request.body)
+            try await users.changePassword(username: targetUsername, req: req)
+            return AdminResponse.noContent()
+        }
+
+        // MARK: LDAP configuration routes
+
+        // GET /admin/api/ldap
+        if components == ["ldap"] && method == .get {
+            try requirePermission(.manageLDAP, for: claims)
+            return try jsonResponse(await ldap.getConfiguration())
+        }
+
+        // PUT /admin/api/ldap
+        if components == ["ldap"] && method == .put {
+            try requirePermission(.manageLDAP, for: claims)
+            let payload: LDAPConfigurationPayload = try decodeBody(request.body)
+            return try jsonResponse(await ldap.updateConfiguration(payload))
+        }
+
+        // POST /admin/api/ldap/test
+        if components == ["ldap", "test"] && method == .post {
+            try requirePermission(.manageLDAP, for: claims)
+            return try jsonResponse(await ldap.testConnection())
+        }
+
         throw AdminError.notFound(resource: path)
     }
 
-    // MARK: - Auth Helper
+    // MARK: - Auth Helpers
 
     /// Extracts and validates the bearer token from the request.
     ///
@@ -351,6 +428,23 @@ public struct AdminRouter: Sendable {
             throw AdminError.unauthorised
         }
         return try await auth.validateToken(token)
+    }
+
+    /// Verifies that the claims contain a role with the required permission.
+    ///
+    /// - Parameters:
+    ///   - permission: The permission to check.
+    ///   - claims: The validated JWT claims.
+    /// - Throws: ``AdminError/forbidden(reason:)`` if the role lacks the
+    ///   required permission; ``AdminError/unauthorised`` if the role string
+    ///   cannot be parsed.
+    private func requirePermission(_ permission: Permission, for claims: JWTClaims) throws {
+        guard let role = AdminRole(rawValue: claims.role) else {
+            throw AdminError.unauthorised
+        }
+        guard role.hasPermission(permission) else {
+            throw AdminError.forbidden(reason: "Role '\(claims.role)' does not have permission '\(permission.rawValue)'")
+        }
     }
 
     // MARK: - Login Handler
