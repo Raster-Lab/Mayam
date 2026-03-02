@@ -257,6 +257,9 @@ Mayam Server uses a layered configuration system:
    - `MAYAM_DICOM_AE_TITLE` — AE Title (default: `MAYAM`)
    - `MAYAM_DICOM_PORT` — DICOM port (default: `11112`)
    - `MAYAM_DICOM_MAX_ASSOCIATIONS` — maximum concurrent associations (default: `64`)
+   - `MAYAM_DICOM_TLS_ENABLED` — enable/disable TLS 1.3 for DICOM associations (`true`/`false`)
+   - `MAYAM_DICOM_TLS_CERTIFICATE_PATH` — path to TLS certificate (PEM format)
+   - `MAYAM_DICOM_TLS_KEY_PATH` — path to TLS private key (PEM format)
    - `MAYAM_STORAGE_ARCHIVE_PATH` — archive directory path
    - `MAYAM_STORAGE_CHECKSUM_ENABLED` — enable/disable SHA-256 checksums (`true`/`false`)
    - `MAYAM_LOG_LEVEL` — log level (`trace`, `debug`, `info`, `notice`, `warning`, `error`, `critical`)
@@ -274,9 +277,28 @@ Mayam Server uses **Swift structured concurrency** with an actor-based architect
 ├─────────────────────────────────────────────────────┤
 │                    ServerActor                       │
 │    ┌──────────────────┐  ┌────────────────────┐     │
-│    │ AssociationActor  │  │   StorageActor     │     │
-│    │ (per connection)  │  │   (singleton)      │     │
-│    └──────────────────┘  └────────────────────┘     │
+│    │  DICOMListener   │  │   StorageActor     │     │
+│    │  (Swift NIO TCP) │  │   (singleton)      │     │
+│    │  ┌────────────┐  │  └────────────────────┘     │
+│    │  │ TLS 1.3    │  │                             │
+│    │  │ (optional) │  │                             │
+│    │  └────────────┘  │                             │
+│    │  ┌────────────┐  │                             │
+│    │  │PDUFrame    │  │                             │
+│    │  │ Decoder    │  │                             │
+│    │  └────────────┘  │                             │
+│    │  ┌────────────┐  │                             │
+│    │  │Association │  │                             │
+│    │  │ Handler    │  │                             │
+│    │  └────────────┘  │                             │
+│    └──────────────────┘                             │
+│    ┌──────────────────┐                             │
+│    │ SCPDispatcher    │                             │
+│    │ ┌──────────────┐ │                             │
+│    │ │VerificationSCP│ │                             │
+│    │ │  (C-ECHO)    │ │                             │
+│    │ └──────────────┘ │                             │
+│    └──────────────────┘                             │
 ├─────────────────────────────────────────────────────┤
 │                    MayamCore                         │
 │  ┌────────────┐ ┌──────────────┐ ┌──────────────┐  │
@@ -292,6 +314,8 @@ Mayam Server uses **Swift structured concurrency** with an actor-based architect
 ```
 
 - **`ServerActor`** — top-level coordinator; owns the DICOM listener lifecycle, manages association actors, and coordinates storage.
+- **`DICOMListener`** — Swift NIO TCP listener; accepts inbound DICOM associations and creates a `DICOMAssociationHandler` per connection with PDU framing, optional TLS 1.3, and DIMSE command dispatch.
+- **`DICOMAssociationHandler`** — NIO channel handler; implements the DICOM Upper Layer Protocol (A-ASSOCIATE negotiation, P-DATA transfer, A-RELEASE, A-ABORT) and routes DIMSE commands to SCP service handlers via `SCPDispatcher`.
 - **`AssociationActor`** — one per active DICOM association; handles the Upper Layer Protocol state machine (A-ASSOCIATE, P-DATA, A-RELEASE, A-ABORT).
 - **`StorageActor`** — singleton; serialises archive writes, computes checksums, and enforces store-as-received semantics.
 - **`ConfigurationLoader`** — loads YAML configuration with environment variable overrides.
@@ -310,6 +334,7 @@ Mayam-Server/
 │   │   ├── Configuration/    # YAML config loader, environment overrides
 │   │   ├── Database/
 │   │   │   └── Migrations/   # PostgreSQL schema migrations
+│   │   ├── DICOM/            # DICOM networking (NIO listener, association, SCP/SCU)
 │   │   ├── Logging/          # Cross-platform logging subsystem
 │   │   └── Models/           # Patient, Study, Accession, etc.
 │   ├── MayamWeb/             # DICOMweb & Admin REST API

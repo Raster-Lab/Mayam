@@ -91,7 +91,10 @@ let package = Package(
         // MARK: - Test Targets
         .testTarget(
             name: "MayamCoreTests",
-            dependencies: ["MayamCore"]
+            dependencies: [
+                "MayamCore",
+                .product(name: "NIOEmbedded", package: "swift-nio")
+            ]
         ),
         .testTarget(
             name: "MayamWebTests",
