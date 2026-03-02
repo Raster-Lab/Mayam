@@ -78,7 +78,7 @@ public actor ModalityWorklistSCP {
             let pendingResponse = CFindResponse(
                 messageIDBeingRespondedTo: request.messageID,
                 affectedSOPClassUID: request.affectedSOPClassUID,
-                status: .pending,
+                status: .pending(warningOptionalKeys: false),
                 hasDataSet: true,
                 presentationContextID: presentationContextID
             )

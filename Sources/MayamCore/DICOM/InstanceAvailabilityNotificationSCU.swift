@@ -32,6 +32,21 @@ public actor InstanceAvailabilityNotificationSCU {
         case unavailable = "UNAVAILABLE"
     }
 
+    /// A reference to a SOP instance in a notification.
+    public struct ReferencedSOPInstance: Sendable, Equatable, Codable {
+        /// The SOP Class UID (0008,0016).
+        public let sopClassUID: String
+
+        /// The SOP Instance UID (0008,0018).
+        public let sopInstanceUID: String
+
+        /// Creates a referenced SOP instance.
+        public init(sopClassUID: String, sopInstanceUID: String) {
+            self.sopClassUID = sopClassUID
+            self.sopInstanceUID = sopInstanceUID
+        }
+    }
+
     /// Represents a notification to be sent.
     public struct Notification: Sendable, Equatable {
         /// Study Instance UID for which availability changed.
@@ -41,7 +56,7 @@ public actor InstanceAvailabilityNotificationSCU {
         public let availabilityStatus: AvailabilityStatus
 
         /// Referenced SOP instances in the study.
-        public let referencedInstances: [(sopClassUID: String, sopInstanceUID: String)]
+        public let referencedInstances: [ReferencedSOPInstance]
 
         /// AE Title from which instances can be retrieved.
         public let retrieveAETitle: String
@@ -60,7 +75,7 @@ public actor InstanceAvailabilityNotificationSCU {
         public init(
             studyInstanceUID: String,
             availabilityStatus: AvailabilityStatus,
-            referencedInstances: [(sopClassUID: String, sopInstanceUID: String)] = [],
+            referencedInstances: [ReferencedSOPInstance] = [],
             retrieveAETitle: String,
             timestamp: Date = Date()
         ) {
