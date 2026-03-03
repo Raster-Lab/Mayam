@@ -278,17 +278,17 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 14 — Performance Optimisation & Benchmarking 🔲 Not Started
+## Milestone 14 — Performance Optimisation & Benchmarking ✅ Complete
 
 **Goal:** Tune for production workloads and publish performance baselines.
 
-- [ ] Profile and optimise the DICOM association pipeline (zero-copy buffer handling, send file).
-- [ ] Optimise database query plans for C-FIND on large archives (100K+ studies).
-- [ ] Optimise concurrent C-STORE throughput (target: saturate 10 Gbps on Apple Silicon).
-- [ ] Benchmark all codec paths (J2KSwift, JLSwift, JXLSwift) for encode/decode throughput.
-- [ ] Optimise near-line recall latency for HSM-migrated studies.
-- [ ] Publish reproducible benchmark scripts and baseline results.
-- [ ] Conduct stress testing with synthetic DICOM datasets.
+- [x] Profile and optimise the DICOM association pipeline (zero-copy buffer handling, send file).
+- [x] Optimise database query plans for C-FIND on large archives (100K+ studies).
+- [x] Optimise concurrent C-STORE throughput (target: saturate 10 Gbps on Apple Silicon).
+- [x] Benchmark all codec paths (J2KSwift, JLSwift, JXLSwift) for encode/decode throughput.
+- [x] Optimise near-line recall latency for HSM-migrated studies.
+- [x] Publish reproducible benchmark scripts and baseline results.
+- [x] Conduct stress testing with synthetic DICOM datasets.
 
 ---
 
@@ -324,7 +324,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), FHIR R4 REST endpoints (Patient, ImagingStudy, DiagnosticReport, Endpoint), HL7 workflow integration (ORM/ORU/ADT), configurable message routing & transformation, ACK/NACK, ServerConfiguration.HL7, integration tests; pending: HL7kit `ImagingStudy` & `Endpoint` contributions |
 | 12 | Security Hardening & IHE Compliance | ✅ Complete | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
 | 13 | Monitoring, Metrics & Operations | ✅ Complete | Prometheus, Docker, systemd, health checks |
-| 14 | Performance Optimisation | 🔲 Not Started | Benchmarks, tuning, stress testing |
+| 14 | Performance Optimisation | ✅ Complete | Zero-copy buffer pool, query plan optimiser, concurrent C-STORE optimiser, codec benchmarks, HSM recall prefetch cache, reproducible benchmark suite, stress testing |
 | 15 | Documentation, Packaging & Release | 🔲 Not Started | Conformance statement, guides, macOS DMG/PKG installer, Homebrew, APT/RPM, v1.0.0 |
 
 ---
