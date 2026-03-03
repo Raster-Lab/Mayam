@@ -308,16 +308,18 @@ final class GracefulShutdownTests: XCTestCase {
         let shutdown = GracefulShutdown()
 
         Task {
-            try await Task.sleep(nanoseconds: 100_000_000)
+            try await Task.sleep(nanoseconds: 50_000_000) // 50ms
             shutdown.trigger()
         }
 
-        var received = false
-        for await _ in shutdown.shutdownSignals() {
-            received = true
-            break
+        let expectation = XCTestExpectation(description: "Shutdown stream yields")
+        Task {
+            for await _ in shutdown.shutdownSignals() {
+                expectation.fulfill()
+                break
+            }
         }
-        XCTAssertTrue(received)
+        await fulfillment(of: [expectation], timeout: 2.0)
     }
 
     func test_gracefulShutdown_doubleTrigger_doesNotCrash() {

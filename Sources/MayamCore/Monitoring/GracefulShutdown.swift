@@ -53,12 +53,20 @@ public final class GracefulShutdown: Sendable {
     /// Async stream that yields when a shutdown signal is received.
     private let stream: AsyncStream<Void>
 
+    /// Continuation for programmatic triggers.
+    private let continuation: AsyncStream<Void>.Continuation
+
+    /// Per-instance shutdown flag.
+    private let _isShuttingDown: ManagedAtomic<Bool>
+
     // MARK: - Initialiser
 
     /// Creates a new graceful shutdown handler.
     public init() {
         let (stream, continuation) = AsyncStream<Void>.makeStream()
         self.stream = stream
+        self.continuation = continuation
+        self._isShuttingDown = ManagedAtomic(false)
         _globalContinuation = continuation
     }
 
@@ -82,15 +90,15 @@ public final class GracefulShutdown: Sendable {
 
     /// Whether the shutdown sequence has been triggered.
     public var isShuttingDown: Bool {
-        _globalShutdownFlag.value
+        _isShuttingDown.value
     }
 
     /// Programmatically triggers shutdown (useful for testing).
     public func trigger() {
-        if !_globalShutdownFlag.value {
-            _globalShutdownFlag.setValue(true)
-            _globalContinuation?.yield()
-            _globalContinuation?.finish()
+        if !_isShuttingDown.value {
+            _isShuttingDown.setValue(true)
+            continuation.yield()
+            continuation.finish()
         }
     }
 }
