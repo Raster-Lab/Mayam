@@ -1,0 +1,200 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Server Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "mayam_uptime_seconds",
+          "legendFormat": "Uptime"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Active DICOM Associations",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "mayam_active_associations",
+          "legendFormat": "Active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 128,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 32 },
+              { "color": "red", "value": 64 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "HTTP Requests / Second",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(mayam_requests_total[5m])",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "title": "Request Latency Percentiles",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "mayam_request_duration_seconds{quantile=\"0.5\"}",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "mayam_request_duration_seconds{quantile=\"0.9\"}",
+          "legendFormat": "p90"
+        },
+        {
+          "expr": "mayam_request_duration_seconds{quantile=\"0.99\"}",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Storage Utilisation per Tier",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "mayam_storage_bytes_total",
+          "legendFormat": "{{ tier }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "title": "Compression Ratio",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "mayam_compression_ratio",
+          "legendFormat": "Ratio"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "x"
+        }
+      }
+    },
+    {
+      "title": "Backup Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 10 },
+      "targets": [
+        {
+          "expr": "mayam_backup_success",
+          "legendFormat": "Success"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "FAILED", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "OK", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Last Backup Timestamp",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "mayam_backup_last_run_timestamp",
+          "legendFormat": "Last Run"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "dateTimeFromNow"
+        }
+      }
+    },
+    {
+      "title": "Error Rate by Category",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "rate(mayam_errors_total[5m])",
+          "legendFormat": "{{ category }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "errors/s"
+        }
+      }
+    },
+    {
+      "title": "Queue Depth",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 14 },
+      "targets": [
+        {
+          "expr": "mayam_queue_depth",
+          "legendFormat": "Pending"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["mayam", "pacs", "dicom"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Mayam PACS Dashboard",
+  "uid": "mayam-pacs",
+  "version": 1
+}

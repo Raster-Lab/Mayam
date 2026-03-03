@@ -1,0 +1,50 @@
+[Unit]
+Description=Mayam PACS Server
+Documentation=https://github.com/Raster-Lab/Mayam
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=mayam
+Group=mayam
+ExecStart=/usr/local/bin/mayam
+WorkingDirectory=/var/lib/mayam
+Environment=MAYAM_CONFIG=/etc/mayam/mayam.yaml
+Environment=MAYAM_STORAGE_ARCHIVE_PATH=/var/lib/mayam/archive
+Environment=MAYAM_LOG_LEVEL=info
+
+# Graceful shutdown — send SIGTERM first, wait 30s, then SIGKILL
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mayam /var/log/mayam
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# Resource limits
+LimitNOFILE=65535
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mayam
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,85 @@
+# Mayam — Docker Compose Configuration
+# Reference: Milestone 13 — Docker / OCI container images
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f mayam
+
+services:
+  # PostgreSQL 18.3 metadata database
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: mayam
+      POSTGRES_USER: mayam
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mayam}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mayam"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Mayam PACS Server
+  mayam:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MAYAM_CONFIG: /etc/mayam/mayam.yaml
+      MAYAM_STORAGE_ARCHIVE_PATH: /var/lib/mayam/archive
+      MAYAM_LOG_LEVEL: info
+      MAYAM_ADMIN_JWT_SECRET: ${MAYAM_ADMIN_JWT_SECRET:-change-me-in-production}
+    ports:
+      - "11112:11112"   # DICOM associations
+      - "8080:8080"     # DICOMweb HTTP
+      - "8081:8081"     # Admin console
+    volumes:
+      - archive_data:/var/lib/mayam/archive
+      - ./Config/mayam.yaml:/etc/mayam/mayam.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Prometheus metrics collection (optional)
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["monitoring"]
+    volumes:
+      - ./Config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # Grafana dashboards (optional)
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["monitoring"]
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./Config/grafana-dashboard.json:/var/lib/grafana/dashboards/mayam.json:ro
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  archive_data:
+  prometheus_data:
+  grafana_data:

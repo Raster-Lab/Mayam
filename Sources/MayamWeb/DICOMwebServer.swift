@@ -42,6 +42,12 @@ public actor DICOMwebServer {
     /// The DICOMweb request router.
     private let router: DICOMwebRouter
 
+    /// The metrics endpoint handler.
+    private let metricsHandler: MetricsHandler?
+
+    /// The health endpoint handler.
+    private let healthHandler: HealthHandler?
+
     /// Logger for HTTP server events.
     private let logger: MayamLogger
 
@@ -64,16 +70,22 @@ public actor DICOMwebServer {
     ///   - storageActor: The archive storage actor for STOW-RS.
     ///   - archivePath: Root path of the DICOM archive for WADO-RS retrieval.
     ///   - logger: Logger instance for HTTP server events.
+    ///   - metricsHandler: Optional handler for the `/metrics` endpoint.
+    ///   - healthHandler: Optional handler for the `/health` endpoint.
     public init(
         configuration: ServerConfiguration.Web,
         metadataStore: any DICOMMetadataStore,
         storageActor: StorageActor,
         archivePath: String,
-        logger: MayamLogger
+        logger: MayamLogger,
+        metricsHandler: MetricsHandler? = nil,
+        healthHandler: HealthHandler? = nil
     ) {
         self.configuration = configuration
         self.archivePath = archivePath
         self.logger = logger
+        self.metricsHandler = metricsHandler
+        self.healthHandler = healthHandler
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
 
         let upsHandler = UPSRSHandler()
@@ -101,6 +113,8 @@ public actor DICOMwebServer {
         let router = self.router
         let basePath = self.configuration.basePath
         let logger = self.logger
+        let metricsHandler = self.metricsHandler
+        let healthHandler = self.healthHandler
 
         let bootstrap = ServerBootstrap(group: eventLoopGroup)
             .serverChannelOption(ChannelOptions.backlog, value: 256)
@@ -108,7 +122,13 @@ public actor DICOMwebServer {
             .childChannelInitializer { channel in
                 channel.pipeline.configureHTTPServerPipeline().flatMap {
                     channel.pipeline.addHandler(
-                        DICOMwebChannelHandler(router: router, basePath: basePath, logger: logger)
+                        DICOMwebChannelHandler(
+                            router: router,
+                            basePath: basePath,
+                            logger: logger,
+                            metricsHandler: metricsHandler,
+                            healthHandler: healthHandler
+                        )
                     )
                 }
             }
@@ -156,14 +176,24 @@ final class DICOMwebChannelHandler: ChannelInboundHandler, @unchecked Sendable {
     private let router: DICOMwebRouter
     private let basePath: String
     private let logger: MayamLogger
+    private let metricsHandler: MetricsHandler?
+    private let healthHandler: HealthHandler?
 
     private var requestHead: HTTPRequestHead?
     private var requestBodyBuffer: ByteBuffer = ByteBuffer()
 
-    init(router: DICOMwebRouter, basePath: String, logger: MayamLogger) {
+    init(
+        router: DICOMwebRouter,
+        basePath: String,
+        logger: MayamLogger,
+        metricsHandler: MetricsHandler? = nil,
+        healthHandler: HealthHandler? = nil
+    ) {
         self.router = router
         self.basePath = basePath
         self.logger = logger
+        self.metricsHandler = metricsHandler
+        self.healthHandler = healthHandler
     }
 
     func channelRead(context: ChannelHandlerContext, data: NIOAny) {
@@ -179,6 +209,27 @@ final class DICOMwebChannelHandler: ChannelInboundHandler, @unchecked Sendable {
 
         case .end:
             guard let head = requestHead else { return }
+
+            // Handle /metrics and /health before DICOMweb routing
+            let rawPath = head.uri.split(separator: "?").first.map(String.init) ?? head.uri
+            let channel = context.channel
+
+            if rawPath == "/metrics", let handler = metricsHandler {
+                Task {
+                    let response = await handler.handleMetrics()
+                    await self.writeResponse(response: response, to: channel, httpVersion: head.version)
+                }
+                return
+            }
+
+            if rawPath == "/health", let handler = healthHandler {
+                Task {
+                    let response = await handler.handleHealth()
+                    await self.writeResponse(response: response, to: channel, httpVersion: head.version)
+                }
+                return
+            }
+
             let method = HTTPMethod(rawValue: head.method.rawValue) ?? .get
             let headers = Dictionary(
                 head.headers.map { ($0.name, $0.value) },
@@ -206,7 +257,6 @@ final class DICOMwebChannelHandler: ChannelInboundHandler, @unchecked Sendable {
                 headers: headers
             )
 
-            let channel = context.channel
             Task {
                 let response = await self.router.route(request)
                 await self.writeResponse(response: response, to: channel, httpVersion: head.version)

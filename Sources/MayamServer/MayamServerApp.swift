@@ -7,8 +7,10 @@ import Foundation
 
 /// Mayam application entry point.
 ///
-/// Loads the server configuration, initialises the logging subsystem, and starts
-/// both the DICOM association listener and the DICOMweb HTTP server.
+/// Loads the server configuration, initialises the logging subsystem, runs
+/// pending database migrations, and starts the DICOM association listener,
+/// DICOMweb HTTP server, and Admin console.  Installs signal handlers for
+/// graceful shutdown with in-flight association draining.
 @main
 struct MayamServerApp {
     static func main() async throws {
@@ -32,6 +34,26 @@ struct MayamServerApp {
         logger.info("DICOM port: \(config.dicom.port)")
         logger.info("DICOMweb port: \(config.web.port)")
 
+        // Run automated database migrations
+        let migrationLogger = MayamLogger(label: "com.raster-lab.mayam.migrations")
+        let migrator = DatabaseMigrator(logger: migrationLogger)
+        do {
+            let allMigrations = try migrator.discoverMigrations()
+            let pending = migrator.pendingMigrations(from: allMigrations)
+            if !pending.isEmpty {
+                logger.info("Found \(pending.count) pending migration(s)")
+                let applied = migrator.applyPendingMigrations(pending)
+                logger.info("Applied \(applied.count) migration(s)")
+            } else {
+                logger.info("Database schema is up to date")
+            }
+        } catch {
+            logger.warning("Database migration discovery failed: \(error) — continuing startup")
+        }
+
+        // Initialise metrics and health subsystems
+        let metricsCollector = MetricsCollector.shared
+
         // Initialise the shared metadata store and storage actor
         let metadataStore = InMemoryDICOMMetadataStore()
         let storageActor = StorageActor(
@@ -40,13 +62,23 @@ struct MayamServerApp {
             logger: MayamLogger(label: "com.raster-lab.mayam.storage")
         )
 
+        // Create metrics and health handlers
+        let metricsHandler = MetricsHandler(metricsCollector: metricsCollector)
+        let healthChecker = HealthChecker(
+            metricsCollector: metricsCollector,
+            archivePath: config.storage.archivePath
+        )
+        let healthHandler = HealthHandler(healthChecker: healthChecker)
+
         // Initialise the DICOMweb HTTP server
         let webServer = DICOMwebServer(
             configuration: config.web,
             metadataStore: metadataStore,
             storageActor: storageActor,
             archivePath: config.storage.archivePath,
-            logger: MayamLogger(label: "com.raster-lab.mayam.web")
+            logger: MayamLogger(label: "com.raster-lab.mayam.web"),
+            metricsHandler: metricsHandler,
+            healthHandler: healthHandler
         )
 
         // Start DICOMweb server
@@ -86,7 +118,29 @@ struct MayamServerApp {
 
         // Initialise and start the DICOM server actor
         let server = ServerActor(configuration: config, logger: logger)
-        try await server.start()
+
+        // Install graceful shutdown signal handlers
+        let shutdown = GracefulShutdown()
+        shutdown.installSignalHandlers()
+
+        // Start DICOM listener and graceful shutdown monitor concurrently
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await server.start()
+            }
+
+            group.addTask {
+                for await _ in shutdown.shutdownSignals() {
+                    logger.info("Shutdown signal received — draining in-flight associations…")
+                    await server.shutdown()
+                    await webServer.stop()
+                    await adminServer.stop()
+                    logger.info("All services stopped — exiting")
+                }
+            }
+
+            try await group.next()
+        }
     }
 }
 

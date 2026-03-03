@@ -260,21 +260,21 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 13 — Monitoring, Metrics & Operations 🔲 Not Started
+## Milestone 13 — Monitoring, Metrics & Operations ✅ Complete
 
 **Goal:** Production observability and operational tooling.
 
-- [ ] Implement a **Prometheus-compatible `/metrics` endpoint** exposing:
+- [x] Implement a **Prometheus-compatible `/metrics` endpoint** exposing:
   - Active associations, requests/second, latency percentiles.
   - Storage utilisation per tier, compression ratios.
   - Backup status and last-run timestamps.
   - Error rates and queue depths.
-- [ ] Implement a **`/health` endpoint** for load balancer and orchestrator probes.
-- [ ] Publish a sample **Grafana dashboard** configuration.
-- [ ] Implement graceful shutdown with in-flight association draining.
-- [ ] Implement **automated database migrations** on server startup.
-- [ ] Provide **Docker / OCI container images** with multi-architecture support (amd64, arm64).
-- [ ] Provide **macOS launchd** plist and **Linux systemd** unit files.
+- [x] Implement a **`/health` endpoint** for load balancer and orchestrator probes.
+- [x] Publish a sample **Grafana dashboard** configuration.
+- [x] Implement graceful shutdown with in-flight association draining.
+- [x] Implement **automated database migrations** on server startup.
+- [x] Provide **Docker / OCI container images** with multi-architecture support (amd64, arm64).
+- [x] Provide **macOS launchd** plist and **Linux systemd** unit files.
 
 ---
 
@@ -323,7 +323,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 10 | Worklist, MPPS & Workflow | ✅ Complete | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |
 | 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), FHIR R4 REST endpoints (Patient, ImagingStudy, DiagnosticReport, Endpoint), HL7 workflow integration (ORM/ORU/ADT), configurable message routing & transformation, ACK/NACK, ServerConfiguration.HL7, integration tests; pending: HL7kit `ImagingStudy` & `Endpoint` contributions |
 | 12 | Security Hardening & IHE Compliance | ✅ Complete | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
-| 13 | Monitoring, Metrics & Operations | 🔲 Not Started | Prometheus, Docker, systemd, health checks |
+| 13 | Monitoring, Metrics & Operations | ✅ Complete | Prometheus, Docker, systemd, health checks |
 | 14 | Performance Optimisation | 🔲 Not Started | Benchmarks, tuning, stress testing |
 | 15 | Documentation, Packaging & Release | 🔲 Not Started | Conformance statement, guides, macOS DMG/PKG installer, Homebrew, APT/RPM, v1.0.0 |
 

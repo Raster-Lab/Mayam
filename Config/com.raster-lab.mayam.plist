@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Mayam — macOS launchd plist
+  Reference: Milestone 13 — macOS launchd plist
+
+  Install:
+    sudo cp com.raster-lab.mayam.plist /Library/LaunchDaemons/
+    sudo launchctl load /Library/LaunchDaemons/com.raster-lab.mayam.plist
+
+  Uninstall:
+    sudo launchctl unload /Library/LaunchDaemons/com.raster-lab.mayam.plist
+    sudo rm /Library/LaunchDaemons/com.raster-lab.mayam.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.raster-lab.mayam</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/mayam</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/var/lib/mayam</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>MAYAM_CONFIG</key>
+        <string>/etc/mayam/mayam.yaml</string>
+        <key>MAYAM_STORAGE_ARCHIVE_PATH</key>
+        <string>/var/lib/mayam/archive</string>
+        <key>MAYAM_LOG_LEVEL</key>
+        <string>info</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/mayam/mayam.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/mayam/mayam-error.log</string>
+
+    <key>UserName</key>
+    <string>mayam</string>
+
+    <key>GroupName</key>
+    <string>mayam</string>
+
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65535</integer>
+        <key>NumberOfProcesses</key>
+        <integer>4096</integer>
+    </dict>
+
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65535</integer>
+        <key>NumberOfProcesses</key>
+        <integer>4096</integer>
+    </dict>
+</dict>
+</plist>

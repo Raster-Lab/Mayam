@@ -1,0 +1,16 @@
+# Mayam — Prometheus Scrape Configuration
+# Reference: Milestone 13 — Prometheus-compatible /metrics endpoint
+#
+# Place this file at /etc/prometheus/prometheus.yml or mount via Docker.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "mayam"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["mayam:8080"]
+        labels:
+          instance: "mayam-pacs"
