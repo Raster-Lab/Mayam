@@ -1,0 +1,1740 @@
+openapi: 3.1.0
+info:
+  title: Mayam PACS Admin REST API
+  description: >
+    Administration API for the Mayam departmental PACS server.
+    Provides management of DICOM nodes, users, storage, worklist,
+    MPPS, webhooks, LDAP, backup, HSM, and system settings.
+    Runs on port 8081 by default with the `/admin/api/` prefix.
+  version: 0.1.0
+  license:
+    name: See LICENSE
+    identifier: LicenseRef-Mayam
+  contact:
+    name: Raster Lab
+
+servers:
+  - url: https://localhost:8081/admin/api
+    description: Local development server (TLS)
+  - url: http://localhost:8081/admin/api
+    description: Local development server (plain HTTP)
+
+tags:
+  - name: Authentication
+    description: Login and session management.
+  - name: Setup
+    description: Initial setup wizard endpoints.
+  - name: Dashboard
+    description: Server status and statistics.
+  - name: Nodes
+    description: DICOM remote node management and verification.
+  - name: Storage
+    description: Storage pool statistics and integrity checks.
+  - name: HSM
+    description: Hierarchical Storage Management status.
+  - name: Backup
+    description: Backup configuration and status.
+  - name: Logs
+    description: Server log querying.
+  - name: Settings
+    description: Server configuration management.
+  - name: Users
+    description: Local user account management.
+  - name: LDAP
+    description: LDAP/Active Directory integration.
+  - name: Worklist
+    description: Modality Worklist (MWL) scheduled procedure steps.
+  - name: MPPS
+    description: Modality Performed Procedure Step records.
+  - name: Webhooks
+    description: Event webhook subscriptions.
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ── Authentication ──────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      summary: Authenticate and obtain a JWT token
+      description: >
+        Accepts a username and password, returning a signed JWT bearer
+        token on success.  The token must be included in the
+        `Authorization` header of all subsequent authenticated requests.
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Setup Wizard ────────────────────────────────────────────────
+  /setup:
+    get:
+      operationId: getSetupStatus
+      summary: Retrieve setup wizard status
+      description: Returns the current step and completion state of the first-run setup wizard.
+      tags: [Setup]
+      security: []
+      responses:
+        "200":
+          description: Setup status returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupStatus"
+
+  /setup/advance:
+    post:
+      operationId: advanceSetup
+      summary: Advance setup wizard to next step
+      description: Validates the current step's data and advances the wizard by one step.
+      tags: [Setup]
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Step-specific configuration payload.
+      responses:
+        "200":
+          description: Step advanced successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupStatus"
+        "400":
+          description: Validation failed for the current step.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /setup/complete:
+    post:
+      operationId: completeSetup
+      summary: Mark setup wizard as complete
+      description: Finalises the setup wizard and enables normal server operation.
+      tags: [Setup]
+      security: []
+      responses:
+        "200":
+          description: Setup completed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupStatus"
+        "409":
+          description: Setup has already been completed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Dashboard ───────────────────────────────────────────────────
+  /dashboard:
+    get:
+      operationId: getDashboard
+      summary: Retrieve dashboard statistics
+      description: >
+        Returns server uptime, storage utilisation, active DICOM
+        association count, total stored instances, and recent activity.
+      tags: [Dashboard]
+      responses:
+        "200":
+          description: Dashboard statistics returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ── Nodes ───────────────────────────────────────────────────────
+  /nodes:
+    get:
+      operationId: listNodes
+      summary: List configured DICOM nodes
+      description: Returns all remote DICOM Application Entities configured in the system.
+      tags: [Nodes]
+      responses:
+        "200":
+          description: List of DICOM nodes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomNode"
+    post:
+      operationId: createNode
+      summary: Create a new DICOM node
+      description: Registers a new remote DICOM Application Entity.
+      tags: [Nodes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DicomNodeInput"
+      responses:
+        "201":
+          description: Node created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DicomNode"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /nodes/{id}:
+    parameters:
+      - $ref: "#/components/parameters/NodeId"
+    get:
+      operationId: getNode
+      summary: Retrieve a DICOM node by identifier
+      tags: [Nodes]
+      responses:
+        "200":
+          description: Node details returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DicomNode"
+        "404":
+          description: Node not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateNode
+      summary: Update a DICOM node
+      tags: [Nodes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DicomNodeInput"
+      responses:
+        "200":
+          description: Node updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DicomNode"
+        "404":
+          description: Node not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteNode
+      summary: Remove a DICOM node
+      tags: [Nodes]
+      responses:
+        "204":
+          description: Node deleted.
+        "404":
+          description: Node not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /nodes/{id}/verify:
+    parameters:
+      - $ref: "#/components/parameters/NodeId"
+    post:
+      operationId: verifyNode
+      summary: Perform a C-ECHO verification against a DICOM node
+      description: >
+        Sends a DICOM C-ECHO request to the specified node and returns
+        the verification result.
+      tags: [Nodes]
+      responses:
+        "200":
+          description: Verification result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResult"
+        "404":
+          description: Node not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Storage ─────────────────────────────────────────────────────
+  /storage:
+    get:
+      operationId: getStorage
+      summary: Retrieve storage pool statistics
+      description: Returns capacity, utilisation, and tier information for each storage pool.
+      tags: [Storage]
+      responses:
+        "200":
+          description: Storage pool list returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoragePool"
+
+  /storage/check:
+    post:
+      operationId: runStorageCheck
+      summary: Run a storage integrity check
+      description: >
+        Initiates an integrity check across the storage pools, verifying
+        file checksums and database consistency.
+      tags: [Storage]
+      responses:
+        "202":
+          description: Integrity check started.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageCheckResult"
+
+  # ── HSM ─────────────────────────────────────────────────────────
+  /hsm:
+    get:
+      operationId: getHSMStatus
+      summary: Retrieve HSM status
+      description: Returns the current state of the Hierarchical Storage Management subsystem.
+      tags: [HSM]
+      responses:
+        "200":
+          description: HSM status returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HSMStatus"
+
+  # ── Backup ──────────────────────────────────────────────────────
+  /backup:
+    get:
+      operationId: getBackupStatus
+      summary: Retrieve backup status
+      description: Returns backup configuration, schedule, and the most recent backup record.
+      tags: [Backup]
+      responses:
+        "200":
+          description: Backup status returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStatus"
+
+  # ── Logs ────────────────────────────────────────────────────────
+  /logs:
+    get:
+      operationId: queryLogs
+      summary: Query server logs
+      description: Returns paginated log entries, optionally filtered by severity level and subsystem label.
+      tags: [Logs]
+      parameters:
+        - name: level
+          in: query
+          description: Filter by log severity level.
+          schema:
+            type: string
+            enum: [trace, debug, info, notice, warning, error, critical]
+        - name: label
+          in: query
+          description: Filter by subsystem label (reverse-DNS identifier).
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Maximum number of entries to return.
+          schema:
+            type: integer
+            default: 100
+            minimum: 1
+            maximum: 1000
+        - name: offset
+          in: query
+          description: Number of entries to skip for pagination.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        "200":
+          description: Log entries returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LogEntry"
+
+  # ── Settings ────────────────────────────────────────────────────
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Read server settings
+      description: Returns the current server configuration.
+      tags: [Settings]
+      responses:
+        "200":
+          description: Settings returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    put:
+      operationId: updateSettings
+      summary: Update server settings
+      description: >
+        Replaces the server configuration with the provided values.
+        Changes to network settings may require a restart.
+      tags: [Settings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: Settings updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Users ───────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      summary: List user accounts
+      description: Returns all local user accounts.  Requires the `manageUsers` permission.
+      tags: [Users]
+      responses:
+        "200":
+          description: User list returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      summary: Create a user account
+      description: Creates a new local user.  Requires the `manageUsers` permission.
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          description: Username already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}:
+    parameters:
+      - $ref: "#/components/parameters/Username"
+    get:
+      operationId: getUser
+      summary: Retrieve a user account
+      tags: [Users]
+      responses:
+        "200":
+          description: User details returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateUser
+      summary: Update a user account
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUser
+      summary: Delete a user account
+      tags: [Users]
+      responses:
+        "204":
+          description: User deleted.
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}/password:
+    parameters:
+      - $ref: "#/components/parameters/Username"
+    post:
+      operationId: changePassword
+      summary: Change a user's password
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "204":
+          description: Password changed successfully.
+        "400":
+          description: Validation error (e.g. password too weak).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── LDAP ────────────────────────────────────────────────────────
+  /ldap:
+    get:
+      operationId: getLDAPConfig
+      summary: Retrieve LDAP configuration
+      description: Returns the current LDAP/Active Directory integration settings.  Requires the `manageLDAP` permission.
+      tags: [LDAP]
+      responses:
+        "200":
+          description: LDAP configuration returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LDAPConfig"
+    put:
+      operationId: updateLDAPConfig
+      summary: Update LDAP configuration
+      description: Replaces the LDAP integration settings.  Requires the `manageLDAP` permission.
+      tags: [LDAP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LDAPConfig"
+      responses:
+        "200":
+          description: LDAP configuration updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LDAPConfig"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ldap/test:
+    post:
+      operationId: testLDAP
+      summary: Test LDAP connection
+      description: >
+        Attempts to bind to the configured LDAP server and returns
+        whether the connection and search base are reachable.
+      tags: [LDAP]
+      responses:
+        "200":
+          description: LDAP connection test result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LDAPTestResult"
+
+  # ── Worklist ────────────────────────────────────────────────────
+  /worklist:
+    get:
+      operationId: listWorklistItems
+      summary: List scheduled procedure steps
+      description: Returns Modality Worklist entries, optionally filtered by status.
+      tags: [Worklist]
+      parameters:
+        - name: status
+          in: query
+          description: Filter by procedure step status.
+          schema:
+            type: string
+            enum: [scheduled, arrived, ready, started, completed, discontinued]
+      responses:
+        "200":
+          description: Worklist entries returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduledProcedureStep"
+    post:
+      operationId: createWorklistItem
+      summary: Create a scheduled procedure step
+      tags: [Worklist]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledProcedureStepInput"
+      responses:
+        "201":
+          description: Procedure step created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledProcedureStep"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /worklist/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Scheduled Procedure Step ID.
+        schema:
+          type: string
+    get:
+      operationId: getWorklistItem
+      summary: Retrieve a scheduled procedure step
+      tags: [Worklist]
+      responses:
+        "200":
+          description: Procedure step returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledProcedureStep"
+        "404":
+          description: Procedure step not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateWorklistItem
+      summary: Update a scheduled procedure step
+      tags: [Worklist]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledProcedureStepInput"
+      responses:
+        "200":
+          description: Procedure step updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledProcedureStep"
+        "404":
+          description: Procedure step not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteWorklistItem
+      summary: Delete a scheduled procedure step
+      tags: [Worklist]
+      responses:
+        "204":
+          description: Procedure step deleted.
+        "404":
+          description: Procedure step not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── MPPS ────────────────────────────────────────────────────────
+  /mpps:
+    get:
+      operationId: listMPPS
+      summary: List performed procedure steps
+      description: Returns MPPS records, optionally filtered by status.
+      tags: [MPPS]
+      parameters:
+        - name: status
+          in: query
+          description: Filter by MPPS status.
+          schema:
+            type: string
+            enum: [inProgress, completed, discontinued]
+      responses:
+        "200":
+          description: MPPS records returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PerformedProcedureStep"
+
+  /mpps/{uid}:
+    parameters:
+      - name: uid
+        in: path
+        required: true
+        description: SOP Instance UID of the MPPS record.
+        schema:
+          type: string
+    get:
+      operationId: getMPPS
+      summary: Retrieve a performed procedure step
+      tags: [MPPS]
+      responses:
+        "200":
+          description: MPPS record returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformedProcedureStep"
+        "404":
+          description: MPPS record not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── Webhooks ────────────────────────────────────────────────────
+  /webhooks:
+    get:
+      operationId: listWebhooks
+      summary: List webhook subscriptions
+      tags: [Webhooks]
+      responses:
+        "200":
+          description: Webhook subscriptions returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WebhookSubscription"
+    post:
+      operationId: createWebhook
+      summary: Create a webhook subscription
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscriptionInput"
+      responses:
+        "201":
+          description: Webhook subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "400":
+          description: Validation error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /webhooks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: Webhook subscription UUID.
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getWebhook
+      summary: Retrieve a webhook subscription
+      tags: [Webhooks]
+      responses:
+        "200":
+          description: Webhook subscription returned.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "404":
+          description: Subscription not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateWebhook
+      summary: Update a webhook subscription
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscriptionInput"
+      responses:
+        "200":
+          description: Webhook subscription updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "404":
+          description: Subscription not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteWebhook
+      summary: Delete a webhook subscription
+      tags: [Webhooks]
+      responses:
+        "204":
+          description: Webhook subscription deleted.
+        "404":
+          description: Subscription not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        JWT token obtained from the `/auth/login` endpoint.  Include in
+        the `Authorization` header as `Bearer <token>`.
+
+  parameters:
+    NodeId:
+      name: id
+      in: path
+      required: true
+      description: DICOM node UUID.
+      schema:
+        type: string
+        format: uuid
+    Username:
+      name: username
+      in: path
+      required: true
+      description: User account name.
+      schema:
+        type: string
+
+  schemas:
+    # ── Auth ────────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          description: Account username.
+          examples: ["admin"]
+        password:
+          type: string
+          format: password
+          description: Account password (transmitted over TLS).
+
+    LoginResponse:
+      type: object
+      required: [token, expiresAt, username, role]
+      properties:
+        token:
+          type: string
+          description: Signed JWT bearer token.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiry timestamp (ISO 8601).
+        username:
+          type: string
+        role:
+          $ref: "#/components/schemas/AdminRole"
+
+    AdminRole:
+      type: string
+      description: User role governing permissions.
+      enum: [admin, technician, physician, auditor]
+
+    # ── Setup ───────────────────────────────────────────────────
+    SetupStatus:
+      type: object
+      required: [completed, setupStep, totalSteps]
+      properties:
+        completed:
+          type: boolean
+          description: Whether the setup wizard has been completed.
+        setupStep:
+          type: integer
+          description: Current zero-based step index.
+          minimum: 0
+        totalSteps:
+          type: integer
+          description: Total number of setup steps.
+          examples: [5]
+
+    # ── Dashboard ───────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required:
+        - serverVersion
+        - uptimeSeconds
+        - activeAssociations
+        - totalStoredInstances
+        - storageUsedBytes
+        - storageFreeBytes
+        - recentActivity
+      properties:
+        serverVersion:
+          type: string
+          description: Mayam server version string.
+          examples: ["0.1.0"]
+        uptimeSeconds:
+          type: number
+          format: double
+          description: Server uptime in seconds.
+        activeAssociations:
+          type: integer
+          description: Number of currently active DICOM associations.
+        totalStoredInstances:
+          type: integer
+          description: Total DICOM instances stored.
+        storageUsedBytes:
+          type: integer
+          format: int64
+          description: Total storage used in bytes.
+        storageFreeBytes:
+          type: integer
+          format: int64
+          description: Total free storage in bytes.
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityEntry"
+
+    ActivityEntry:
+      type: object
+      required: [timestamp, event, detail]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        event:
+          type: string
+          description: Activity type.
+          examples: ["store", "query", "login"]
+        detail:
+          type: string
+          description: Human-readable detail.
+
+    # ── Nodes ───────────────────────────────────────────────────
+    DicomNode:
+      type: object
+      required: [id, aeTitle, host, port, tlsEnabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        aeTitle:
+          type: string
+          description: DICOM Application Entity Title.
+          maxLength: 16
+          examples: ["REMOTE_AE"]
+        host:
+          type: string
+          description: Hostname or IP address.
+          examples: ["192.168.1.50"]
+        port:
+          type: integer
+          description: TCP port number.
+          minimum: 1
+          maximum: 65535
+          examples: [11112]
+        description:
+          type: ["string", "null"]
+          description: Optional human-readable description.
+        tlsEnabled:
+          type: boolean
+          description: Whether DICOM TLS is enabled for this node.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DicomNodeInput:
+      type: object
+      required: [aeTitle, host, port]
+      properties:
+        aeTitle:
+          type: string
+          maxLength: 16
+        host:
+          type: string
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        description:
+          type: ["string", "null"]
+        tlsEnabled:
+          type: boolean
+          default: false
+
+    VerifyResult:
+      type: object
+      required: [success, message, responseTimeMs]
+      properties:
+        success:
+          type: boolean
+          description: Whether the C-ECHO succeeded.
+        message:
+          type: string
+          description: Human-readable result description.
+        responseTimeMs:
+          type: number
+          format: double
+          description: Round-trip time in milliseconds.
+
+    # ── Storage ─────────────────────────────────────────────────
+    StoragePool:
+      type: object
+      required: [name, path, totalBytes, usedBytes, freeBytes, tier]
+      properties:
+        name:
+          type: string
+          description: Storage pool name.
+        path:
+          type: string
+          description: Root directory path.
+        totalBytes:
+          type: integer
+          format: int64
+        usedBytes:
+          type: integer
+          format: int64
+        freeBytes:
+          type: integer
+          format: int64
+        tier:
+          type: string
+          description: Storage tier classification.
+          enum: [online, nearLine, archive]
+
+    StorageCheckResult:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          description: Check run status.
+          enum: [started, healthy, degraded, error]
+        message:
+          type: string
+          description: Human-readable result summary.
+
+    # ── HSM ─────────────────────────────────────────────────────
+    HSMStatus:
+      type: object
+      required: [enabled, tierCount, migrationRuleCount, migrationScanIntervalSeconds]
+      properties:
+        enabled:
+          type: boolean
+        tierCount:
+          type: integer
+        migrationRuleCount:
+          type: integer
+        migrationScanIntervalSeconds:
+          type: integer
+
+    # ── Backup ──────────────────────────────────────────────────
+    BackupStatus:
+      type: object
+      required: [enabled, targets, schedule, lastBackup]
+      properties:
+        enabled:
+          type: boolean
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/BackupTarget"
+        schedule:
+          $ref: "#/components/schemas/BackupSchedule"
+        lastBackup:
+          description: Most recent backup record, or null if none.
+          oneOf:
+            - $ref: "#/components/schemas/BackupRecord"
+            - type: "null"
+
+    BackupTarget:
+      type: object
+      required: [id, name, targetType, destinationPath, enabled]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        targetType:
+          type: string
+          enum: [local, network, s3]
+        destinationPath:
+          type: string
+        enabled:
+          type: boolean
+
+    BackupSchedule:
+      type: object
+      required: [intervalSeconds, includeDatabase, includeDICOMObjects]
+      properties:
+        intervalSeconds:
+          type: integer
+          description: Seconds between scheduled backups.
+          default: 86400
+        includeDatabase:
+          type: boolean
+        includeDICOMObjects:
+          type: boolean
+
+    BackupRecord:
+      type: object
+      required: [id, targetID, startedAt, objectCount, sizeBytes, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        targetID:
+          type: string
+          format: uuid
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        objectCount:
+          type: integer
+        sizeBytes:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [running, completed, failed, cancelled]
+        errorMessage:
+          type: ["string", "null"]
+
+    # ── Logs ────────────────────────────────────────────────────
+    LogEntry:
+      type: object
+      required: [timestamp, level, label, message]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [trace, debug, info, notice, warning, error, critical]
+        label:
+          type: string
+          description: Subsystem label (reverse-DNS identifier).
+        message:
+          type: string
+
+    # ── Settings ────────────────────────────────────────────────
+    Settings:
+      type: object
+      required: [dicom, web, admin]
+      properties:
+        dicom:
+          $ref: "#/components/schemas/DicomSettings"
+        web:
+          $ref: "#/components/schemas/WebSettings"
+        admin:
+          $ref: "#/components/schemas/AdminSettings"
+
+    DicomSettings:
+      type: object
+      required: [aeTitle, port, maxAssociations, tlsEnabled]
+      properties:
+        aeTitle:
+          type: string
+          description: Local DICOM Application Entity Title.
+          default: MAYAM
+          maxLength: 16
+        port:
+          type: integer
+          default: 11112
+          minimum: 1
+          maximum: 65535
+        maxAssociations:
+          type: integer
+          default: 64
+          minimum: 1
+        tlsEnabled:
+          type: boolean
+        tlsCertificatePath:
+          type: ["string", "null"]
+        tlsKeyPath:
+          type: ["string", "null"]
+
+    WebSettings:
+      type: object
+      required: [port, tlsEnabled, basePath]
+      properties:
+        port:
+          type: integer
+          default: 8080
+          minimum: 1
+          maximum: 65535
+        tlsEnabled:
+          type: boolean
+        tlsCertificatePath:
+          type: ["string", "null"]
+        tlsKeyPath:
+          type: ["string", "null"]
+        basePath:
+          type: string
+          description: DICOMweb base path.
+          default: /
+
+    AdminSettings:
+      type: object
+      required: [port, tlsEnabled, sessionExpirySeconds, setupCompleted]
+      properties:
+        port:
+          type: integer
+          default: 8081
+          minimum: 1
+          maximum: 65535
+        tlsEnabled:
+          type: boolean
+        tlsCertificatePath:
+          type: ["string", "null"]
+        tlsKeyPath:
+          type: ["string", "null"]
+        sessionExpirySeconds:
+          type: integer
+          default: 3600
+          minimum: 60
+        setupCompleted:
+          type: boolean
+
+    # ── Users ───────────────────────────────────────────────────
+    User:
+      type: object
+      required: [username, role]
+      properties:
+        username:
+          type: string
+        role:
+          $ref: "#/components/schemas/AdminRole"
+
+    CreateUserRequest:
+      type: object
+      required: [username, password, role]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        role:
+          $ref: "#/components/schemas/AdminRole"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        role:
+          $ref: "#/components/schemas/AdminRole"
+
+    ChangePasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+          format: password
+
+    # ── LDAP ────────────────────────────────────────────────────
+    LDAPConfig:
+      type: object
+      required:
+        - enabled
+        - host
+        - port
+        - useTLS
+        - serviceBindDN
+        - serviceBindPassword
+        - baseDN
+        - userSearchFilter
+        - groupSearchBase
+        - schema
+      properties:
+        enabled:
+          type: boolean
+        host:
+          type: string
+        port:
+          type: integer
+          description: LDAP port (typically 389 or 636).
+          examples: [389]
+        useTLS:
+          type: boolean
+        serviceBindDN:
+          type: string
+          description: Distinguished Name for the service bind account.
+        serviceBindPassword:
+          type: string
+          format: password
+        baseDN:
+          type: string
+          description: Base DN for user searches.
+        userSearchFilter:
+          type: string
+          description: LDAP search filter for users.
+          examples: ["(objectClass=inetOrgPerson)"]
+        groupSearchBase:
+          type: string
+          description: Base DN for group searches.
+        schema:
+          $ref: "#/components/schemas/LDAPSchema"
+
+    LDAPSchema:
+      type: object
+      required:
+        - usernameAttribute
+        - emailAttribute
+        - displayNameAttribute
+        - memberOfAttribute
+        - adminGroupDN
+        - techGroupDN
+        - physicianGroupDN
+        - auditorGroupDN
+      properties:
+        usernameAttribute:
+          type: string
+          description: Attribute containing the username (e.g. `uid` or `sAMAccountName`).
+          examples: ["uid"]
+        emailAttribute:
+          type: string
+          examples: ["mail"]
+        displayNameAttribute:
+          type: string
+          examples: ["cn"]
+        memberOfAttribute:
+          type: string
+          examples: ["memberOf"]
+        adminGroupDN:
+          type: string
+        techGroupDN:
+          type: string
+        physicianGroupDN:
+          type: string
+        auditorGroupDN:
+          type: string
+
+    LDAPTestResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          description: Whether the LDAP bind and search base are reachable.
+        message:
+          type: string
+
+    # ── Worklist ────────────────────────────────────────────────
+    ScheduledProcedureStep:
+      type: object
+      description: >
+        A Modality Worklist scheduled procedure step, corresponding to
+        DICOM Modality Worklist Information Model attributes.
+      required:
+        - scheduledProcedureStepID
+        - studyInstanceUID
+        - accessionNumber
+        - patientID
+        - patientName
+        - scheduledStartDate
+        - modality
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        scheduledProcedureStepID:
+          type: string
+          description: Scheduled Procedure Step ID (0040,0009).
+        studyInstanceUID:
+          type: string
+          description: Study Instance UID (0020,000D).
+        accessionNumber:
+          type: string
+          description: Accession Number (0008,0050).
+        patientID:
+          type: string
+          description: Patient ID (0010,0020).
+        patientName:
+          type: string
+          description: Patient's Name (0010,0010).
+        patientBirthDate:
+          type: ["string", "null"]
+          description: Patient's Birth Date (0010,0030).
+        patientSex:
+          type: ["string", "null"]
+          description: Patient's Sex (0010,0040).
+        referringPhysicianName:
+          type: ["string", "null"]
+          description: Referring Physician's Name (0008,0090).
+        requestedProcedureID:
+          type: ["string", "null"]
+          description: Requested Procedure ID (0040,1001).
+        requestedProcedureDescription:
+          type: ["string", "null"]
+          description: Requested Procedure Description (0032,1060).
+        scheduledStartDate:
+          type: string
+          description: Scheduled Procedure Step Start Date (0040,0002).
+        scheduledStartTime:
+          type: ["string", "null"]
+          description: Scheduled Procedure Step Start Time (0040,0003).
+        modality:
+          type: string
+          description: Modality (0008,0060).
+          examples: ["CT", "MR", "US", "CR", "DX"]
+        scheduledPerformingPhysicianName:
+          type: ["string", "null"]
+          description: Scheduled Performing Physician's Name (0040,0006).
+        scheduledProcedureStepDescription:
+          type: ["string", "null"]
+          description: Scheduled Procedure Step Description (0040,0007).
+        scheduledStationAETitle:
+          type: ["string", "null"]
+          description: Scheduled Station AE Title (0040,0001).
+        scheduledStationName:
+          type: ["string", "null"]
+          description: Scheduled Station Name (0040,0010).
+        scheduledProcedureStepLocation:
+          type: ["string", "null"]
+          description: Scheduled Procedure Step Location (0040,0011).
+        status:
+          type: string
+          enum: [scheduled, arrived, ready, started, completed, discontinued]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ScheduledProcedureStepInput:
+      type: object
+      required:
+        - studyInstanceUID
+        - accessionNumber
+        - patientID
+        - patientName
+        - scheduledStartDate
+        - modality
+      properties:
+        studyInstanceUID:
+          type: string
+        accessionNumber:
+          type: string
+        patientID:
+          type: string
+        patientName:
+          type: string
+        patientBirthDate:
+          type: ["string", "null"]
+        patientSex:
+          type: ["string", "null"]
+        referringPhysicianName:
+          type: ["string", "null"]
+        requestedProcedureID:
+          type: ["string", "null"]
+        requestedProcedureDescription:
+          type: ["string", "null"]
+        scheduledStartDate:
+          type: string
+        scheduledStartTime:
+          type: ["string", "null"]
+        modality:
+          type: string
+        scheduledPerformingPhysicianName:
+          type: ["string", "null"]
+        scheduledProcedureStepDescription:
+          type: ["string", "null"]
+        scheduledStationAETitle:
+          type: ["string", "null"]
+        scheduledStationName:
+          type: ["string", "null"]
+        scheduledProcedureStepLocation:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [scheduled, arrived, ready, started, completed, discontinued]
+          default: scheduled
+
+    # ── MPPS ────────────────────────────────────────────────────
+    PerformedProcedureStep:
+      type: object
+      description: >
+        A Modality Performed Procedure Step (MPPS) record, corresponding
+        to DICOM N-CREATE/N-SET attributes.
+      required:
+        - sopInstanceUID
+        - status
+        - numberOfInstances
+        - createdAt
+        - updatedAt
+      properties:
+        sopInstanceUID:
+          type: string
+          description: SOP Instance UID (0008,0018).
+        status:
+          type: string
+          description: Performed Procedure Step Status (0040,0252).
+          enum: [inProgress, completed, discontinued]
+        studyInstanceUID:
+          type: ["string", "null"]
+          description: Study Instance UID (0020,000D).
+        accessionNumber:
+          type: ["string", "null"]
+          description: Accession Number (0008,0050).
+        patientID:
+          type: ["string", "null"]
+          description: Patient ID (0010,0020).
+        patientName:
+          type: ["string", "null"]
+          description: Patient's Name (0010,0010).
+        modality:
+          type: ["string", "null"]
+          description: Modality (0008,0060).
+        performedStationAETitle:
+          type: ["string", "null"]
+          description: Performed Station AE Title (0040,0241).
+        performedStationName:
+          type: ["string", "null"]
+          description: Performed Station Name (0040,0242).
+        performedStartDate:
+          type: ["string", "null"]
+          description: Performed Procedure Step Start Date (0040,0244).
+        performedStartTime:
+          type: ["string", "null"]
+          description: Performed Procedure Step Start Time (0040,0245).
+        performedEndDate:
+          type: ["string", "null"]
+          description: Performed Procedure Step End Date (0040,0250).
+        performedEndTime:
+          type: ["string", "null"]
+          description: Performed Procedure Step End Time (0040,0251).
+        performedProcedureStepDescription:
+          type: ["string", "null"]
+          description: Performed Procedure Step Description (0040,0254).
+        performedProcedureStepID:
+          type: ["string", "null"]
+          description: Performed Procedure Step ID (0040,0253).
+        scheduledProcedureStepID:
+          type: ["string", "null"]
+          description: Scheduled Procedure Step ID (0040,0009).
+        performedSeriesInstanceUIDs:
+          type: array
+          items:
+            type: string
+          description: Series Instance UIDs acquired during this step.
+        numberOfInstances:
+          type: integer
+          description: Number of SOP Instances acquired.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Webhooks ────────────────────────────────────────────────
+    WebhookSubscription:
+      type: object
+      required:
+        - id
+        - name
+        - url
+        - eventTypes
+        - enabled
+        - maxRetries
+        - retryDelaySeconds
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Human-readable subscription name.
+        url:
+          type: string
+          format: uri
+          description: HTTPS endpoint to receive webhook payloads.
+        secret:
+          type: string
+          description: HMAC-SHA256 secret for payload verification.
+        eventTypes:
+          type: array
+          items:
+            type: string
+            enum:
+              - study.received
+              - study.updated
+              - study.complete
+              - study.available
+              - study.routed
+              - study.archived
+              - study.rehydrated
+              - study.deleted
+              - study.error
+        enabled:
+          type: boolean
+        maxRetries:
+          type: integer
+          default: 5
+        retryDelaySeconds:
+          type: integer
+          default: 10
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WebhookSubscriptionInput:
+      type: object
+      required: [name, url, eventTypes]
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        secret:
+          type: string
+        eventTypes:
+          type: array
+          items:
+            type: string
+            enum:
+              - study.received
+              - study.updated
+              - study.complete
+              - study.available
+              - study.routed
+              - study.archived
+              - study.rehydrated
+              - study.deleted
+              - study.error
+        enabled:
+          type: boolean
+          default: true
+        maxRetries:
+          type: integer
+          default: 5
+        retryDelaySeconds:
+          type: integer
+          default: 10
+
+    # ── Common ──────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.

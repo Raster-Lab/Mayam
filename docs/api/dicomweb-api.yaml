@@ -1,0 +1,1280 @@
+openapi: 3.1.0
+info:
+  title: Mayam PACS DICOMweb & FHIR API
+  description: >
+    DICOMweb (DICOM PS3.18), FHIR R4, and operational endpoints exposed
+    by the Mayam departmental PACS server on port 8080.  Implements
+    QIDO-RS, WADO-RS, STOW-RS, UPS-RS, WADO-URI, and a subset of
+    FHIR R4 resources (Patient, ImagingStudy, DiagnosticReport,
+    Endpoint).
+  version: 0.1.0
+  license:
+    name: See LICENSE
+    identifier: LicenseRef-Mayam
+  contact:
+    name: Raster Lab
+
+servers:
+  - url: https://localhost:8080
+    description: Local development server (TLS)
+  - url: http://localhost:8080
+    description: Local development server (plain HTTP)
+
+tags:
+  - name: QIDO-RS
+    description: >
+      Query based on ID for DICOM Objects – RESTful Services
+      (DICOM PS3.18 §10.6).
+  - name: WADO-RS
+    description: >
+      Web Access to DICOM Objects – RESTful Services
+      (DICOM PS3.18 §10.4).
+  - name: STOW-RS
+    description: >
+      Store Over the Web – RESTful Services (DICOM PS3.18 §10.5).
+  - name: UPS-RS
+    description: >
+      Unified Procedure Step – RESTful Services (DICOM PS3.18 §11).
+  - name: WADO-URI
+    description: >
+      Legacy WADO URI-based retrieval (DICOM PS3.18 §9).
+  - name: Health
+    description: Server health and readiness probes.
+  - name: Metrics
+    description: Prometheus-compatible metrics endpoint.
+  - name: FHIR
+    description: FHIR R4 read-only resource endpoints.
+
+security: []
+
+paths:
+  # ════════════════════════════════════════════════════════════════
+  # QIDO-RS
+  # ════════════════════════════════════════════════════════════════
+  /studies:
+    get:
+      operationId: searchStudies
+      summary: Search for studies
+      description: >
+        QIDO-RS query for Study-level DICOM objects.  Supports DICOM
+        attribute matching via query parameters (e.g. PatientID,
+        StudyDate, ModalitiesInStudy).
+      tags: [QIDO-RS]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/IncludeField"
+        - $ref: "#/components/parameters/FuzzyMatching"
+        - name: PatientID
+          in: query
+          description: DICOM Patient ID (0010,0020).
+          schema:
+            type: string
+        - name: PatientName
+          in: query
+          description: DICOM Patient's Name (0010,0010). Supports wildcard matching.
+          schema:
+            type: string
+        - name: StudyDate
+          in: query
+          description: DICOM Study Date (0008,0020). Single date or range (e.g. `20240101-20240131`).
+          schema:
+            type: string
+        - name: ModalitiesInStudy
+          in: query
+          description: DICOM Modalities in Study (0008,0061).
+          schema:
+            type: string
+        - name: AccessionNumber
+          in: query
+          description: DICOM Accession Number (0008,0050).
+          schema:
+            type: string
+        - name: StudyInstanceUID
+          in: query
+          description: DICOM Study Instance UID (0020,000D).
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching studies returned as DICOM JSON.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "400":
+          description: Invalid query parameters.
+        "204":
+          description: No matching studies found.
+    post:
+      operationId: storeInstances
+      summary: Store DICOM instances
+      description: >
+        STOW-RS endpoint.  Accepts one or more DICOM Part 10 objects
+        encoded as multipart/related with `type=application/dicom`.
+      tags: [STOW-RS]
+      requestBody:
+        required: true
+        content:
+          multipart/related:
+            schema:
+              type: string
+              format: binary
+            encoding:
+              part:
+                contentType: application/dicom
+      responses:
+        "200":
+          description: All instances stored successfully.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/StowResponse"
+        "202":
+          description: Some instances stored; warnings present.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/StowResponse"
+        "400":
+          description: Request body is malformed.
+        "409":
+          description: Conflict — storage failed for one or more instances.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/StowResponse"
+
+  /studies/{studyUID}:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+    get:
+      operationId: retrieveStudy
+      summary: Retrieve all instances in a study
+      description: >
+        WADO-RS retrieval of every instance belonging to the specified
+        study, returned as multipart/related DICOM Part 10 objects.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Study instances returned.
+          content:
+            multipart/related:
+              schema:
+                type: string
+                format: binary
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study not found.
+    post:
+      operationId: storeInstancesInStudy
+      summary: Store DICOM instances in a specific study
+      description: >
+        STOW-RS endpoint scoped to the given Study Instance UID.
+        All instances in the request must belong to this study.
+      tags: [STOW-RS]
+      requestBody:
+        required: true
+        content:
+          multipart/related:
+            schema:
+              type: string
+              format: binary
+            encoding:
+              part:
+                contentType: application/dicom
+      responses:
+        "200":
+          description: All instances stored successfully.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/StowResponse"
+        "400":
+          description: Request body is malformed.
+        "409":
+          description: Conflict — study UID mismatch or storage failure.
+
+  /studies/{studyUID}/series:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+    get:
+      operationId: searchSeriesInStudy
+      summary: Search for series within a study
+      description: QIDO-RS query for Series-level objects within a study.
+      tags: [QIDO-RS]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/IncludeField"
+        - name: Modality
+          in: query
+          description: DICOM Modality (0008,0060).
+          schema:
+            type: string
+        - name: SeriesInstanceUID
+          in: query
+          description: DICOM Series Instance UID (0020,000E).
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching series returned as DICOM JSON.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study not found.
+        "204":
+          description: No matching series found.
+
+  /studies/{studyUID}/series/{seriesUID}:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+    get:
+      operationId: retrieveSeries
+      summary: Retrieve all instances in a series
+      description: >
+        WADO-RS retrieval of every instance belonging to the specified
+        series within a study.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Series instances returned.
+          content:
+            multipart/related:
+              schema:
+                type: string
+                format: binary
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study or series not found.
+
+  /studies/{studyUID}/series/{seriesUID}/instances:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+    get:
+      operationId: searchInstancesInSeries
+      summary: Search for instances within a series
+      description: QIDO-RS query for Instance-level objects within a series.
+      tags: [QIDO-RS]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/IncludeField"
+        - name: SOPInstanceUID
+          in: query
+          description: DICOM SOP Instance UID (0008,0018).
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching instances returned as DICOM JSON.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study or series not found.
+        "204":
+          description: No matching instances found.
+
+  /studies/{studyUID}/series/{seriesUID}/instances/{instanceUID}:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+      - $ref: "#/components/parameters/InstanceUID"
+    get:
+      operationId: retrieveInstance
+      summary: Retrieve a single DICOM instance
+      description: WADO-RS retrieval of one SOP Instance.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Instance returned.
+          content:
+            multipart/related:
+              schema:
+                type: string
+                format: binary
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Instance not found.
+
+  /studies/{studyUID}/series/{seriesUID}/instances/{instanceUID}/frames/{frameNumbers}:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+      - $ref: "#/components/parameters/InstanceUID"
+      - name: frameNumbers
+        in: path
+        required: true
+        description: >
+          Comma-separated, one-based frame numbers to retrieve
+          (e.g. `1,3,5`).
+        schema:
+          type: string
+          examples: ["1", "1,2,3"]
+    get:
+      operationId: retrieveFrames
+      summary: Retrieve specific pixel data frames
+      description: >
+        WADO-RS retrieval of individual frames from a multi-frame
+        DICOM instance.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Requested frames returned as multipart/related.
+          content:
+            multipart/related:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid frame numbers.
+        "404":
+          description: Instance not found.
+
+  # ── Metadata ──────────────────────────────────────────────────
+  /studies/{studyUID}/metadata:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+    get:
+      operationId: retrieveStudyMetadata
+      summary: Retrieve metadata for all instances in a study
+      description: >
+        Returns DICOM JSON metadata (without bulk data) for every
+        instance in the specified study.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Study metadata returned.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study not found.
+
+  /studies/{studyUID}/series/{seriesUID}/metadata:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+    get:
+      operationId: retrieveSeriesMetadata
+      summary: Retrieve metadata for all instances in a series
+      description: >
+        Returns DICOM JSON metadata (without bulk data) for every
+        instance in the specified series.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Series metadata returned.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Study or series not found.
+
+  /studies/{studyUID}/series/{seriesUID}/instances/{instanceUID}/metadata:
+    parameters:
+      - $ref: "#/components/parameters/StudyUID"
+      - $ref: "#/components/parameters/SeriesUID"
+      - $ref: "#/components/parameters/InstanceUID"
+    get:
+      operationId: retrieveInstanceMetadata
+      summary: Retrieve metadata for a single instance
+      description: >
+        Returns DICOM JSON metadata (without bulk data) for the
+        specified SOP Instance.
+      tags: [WADO-RS]
+      responses:
+        "200":
+          description: Instance metadata returned.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Instance not found.
+
+  # ════════════════════════════════════════════════════════════════
+  # UPS-RS
+  # ════════════════════════════════════════════════════════════════
+  /workitems:
+    get:
+      operationId: searchWorkitems
+      summary: Search for workitems
+      description: >
+        UPS-RS query for Unified Procedure Step workitems.
+        Supports DICOM attribute matching via query parameters.
+      tags: [UPS-RS]
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - name: ProcedureStepState
+          in: query
+          description: Filter by UPS state.
+          schema:
+            type: string
+            enum: [SCHEDULED, IN PROGRESS, CANCELED, COMPLETED]
+      responses:
+        "200":
+          description: Matching workitems returned as DICOM JSON.
+          content:
+            application/dicom+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DicomJsonObject"
+        "204":
+          description: No matching workitems found.
+    post:
+      operationId: createWorkitem
+      summary: Create a workitem
+      description: >
+        UPS-RS N-CREATE equivalent.  Creates a new Unified Procedure
+        Step workitem.
+      tags: [UPS-RS]
+      parameters:
+        - name: workitem
+          in: query
+          description: >
+            Optional Workitem UID. If omitted the server shall generate one.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "201":
+          description: Workitem created.
+          headers:
+            Location:
+              description: URI of the created workitem.
+              schema:
+                type: string
+                format: uri
+        "400":
+          description: Invalid workitem attributes.
+        "409":
+          description: A workitem with the given UID already exists.
+
+  /workitems/{workitemUID}:
+    parameters:
+      - $ref: "#/components/parameters/WorkitemUID"
+    get:
+      operationId: getWorkitem
+      summary: Retrieve a workitem
+      description: UPS-RS retrieval of a single workitem.
+      tags: [UPS-RS]
+      responses:
+        "200":
+          description: Workitem returned as DICOM JSON.
+          content:
+            application/dicom+json:
+              schema:
+                $ref: "#/components/schemas/DicomJsonObject"
+        "404":
+          description: Workitem not found.
+    post:
+      operationId: updateWorkitem
+      summary: Update a workitem
+      description: >
+        UPS-RS N-SET equivalent.  Updates attributes of an existing
+        Unified Procedure Step workitem.
+      tags: [UPS-RS]
+      requestBody:
+        required: true
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "200":
+          description: Workitem updated.
+        "400":
+          description: Invalid attributes.
+        "404":
+          description: Workitem not found.
+        "409":
+          description: State conflict — workitem cannot be updated in its current state.
+
+  /workitems/{workitemUID}/state:
+    parameters:
+      - $ref: "#/components/parameters/WorkitemUID"
+    post:
+      operationId: changeWorkitemState
+      summary: Change workitem state
+      description: >
+        Transitions the workitem to a new Procedure Step State
+        (e.g. SCHEDULED → IN PROGRESS → COMPLETED).
+      tags: [UPS-RS]
+      requestBody:
+        required: true
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "200":
+          description: State changed successfully.
+        "400":
+          description: Invalid state transition.
+        "404":
+          description: Workitem not found.
+        "409":
+          description: State transition not permitted from the current state.
+
+  /workitems/{workitemUID}/cancelrequest:
+    parameters:
+      - $ref: "#/components/parameters/WorkitemUID"
+    post:
+      operationId: requestWorkitemCancellation
+      summary: Request cancellation of a workitem
+      description: >
+        Submits a cancellation request for an in-progress workitem.
+        The performing system may accept or deny the request.
+      tags: [UPS-RS]
+      requestBody:
+        required: false
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "202":
+          description: Cancellation request accepted.
+        "404":
+          description: Workitem not found.
+        "409":
+          description: Workitem is not in a cancellable state.
+
+  /workitems/{workitemUID}/subscribers/{aeTitle}:
+    parameters:
+      - $ref: "#/components/parameters/WorkitemUID"
+      - $ref: "#/components/parameters/AETitle"
+    post:
+      operationId: subscribeToWorkitem
+      summary: Subscribe to workitem events
+      description: >
+        Subscribes the specified AE to receive UPS Event notifications
+        for the given workitem.
+      tags: [UPS-RS]
+      requestBody:
+        required: false
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "201":
+          description: Subscription created.
+        "404":
+          description: Workitem not found.
+    delete:
+      operationId: unsubscribeFromWorkitem
+      summary: Unsubscribe from workitem events
+      tags: [UPS-RS]
+      responses:
+        "204":
+          description: Subscription removed.
+        "404":
+          description: Workitem or subscription not found.
+
+  /workitems/1.2.840.10008.5.1.4.34.5/subscribers/{aeTitle}:
+    parameters:
+      - $ref: "#/components/parameters/AETitle"
+    post:
+      operationId: globalSubscribe
+      summary: Subscribe to all workitem events (global)
+      description: >
+        Subscribes the specified AE to receive UPS Event notifications
+        for all workitems using the well-known Global Subscription
+        SOP Instance UID (1.2.840.10008.5.1.4.34.5).
+      tags: [UPS-RS]
+      requestBody:
+        required: false
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "201":
+          description: Global subscription created.
+    delete:
+      operationId: globalUnsubscribe
+      summary: Unsubscribe from all workitem events (global)
+      tags: [UPS-RS]
+      responses:
+        "204":
+          description: Global subscription removed.
+        "404":
+          description: Subscription not found.
+
+  /workitems/1.2.840.10008.5.1.4.34.5.1/subscribers/{aeTitle}:
+    parameters:
+      - $ref: "#/components/parameters/AETitle"
+    post:
+      operationId: filteredSubscribe
+      summary: Subscribe to workitem events with a filter
+      description: >
+        Subscribes the specified AE to receive UPS Event notifications
+        for workitems matching a filter, using the well-known Filtered
+        Global Subscription SOP Instance UID
+        (1.2.840.10008.5.1.4.34.5.1).
+      tags: [UPS-RS]
+      requestBody:
+        required: false
+        content:
+          application/dicom+json:
+            schema:
+              $ref: "#/components/schemas/DicomJsonObject"
+      responses:
+        "201":
+          description: Filtered subscription created.
+
+  # ════════════════════════════════════════════════════════════════
+  # WADO-URI (Legacy)
+  # ════════════════════════════════════════════════════════════════
+  /wado:
+    get:
+      operationId: wadoURIRetrieve
+      summary: Retrieve a single DICOM object (WADO-URI)
+      description: >
+        Legacy URI-based object retrieval as defined in DICOM PS3.18 §9.
+        Returns the object in the requested content type.
+      tags: [WADO-URI]
+      parameters:
+        - name: requestType
+          in: query
+          required: true
+          description: Must be `WADO`.
+          schema:
+            type: string
+            enum: [WADO]
+        - name: studyUID
+          in: query
+          required: true
+          description: Study Instance UID.
+          schema:
+            type: string
+        - name: seriesUID
+          in: query
+          required: true
+          description: Series Instance UID.
+          schema:
+            type: string
+        - name: objectUID
+          in: query
+          required: true
+          description: SOP Instance UID.
+          schema:
+            type: string
+        - name: contentType
+          in: query
+          description: >
+            Requested MIME type (e.g. `application/dicom`,
+            `image/jpeg`, `image/png`).
+          schema:
+            type: string
+            default: application/dicom
+        - name: transferSyntax
+          in: query
+          description: DICOM Transfer Syntax UID for transcoding.
+          schema:
+            type: string
+        - name: rows
+          in: query
+          description: Requested number of pixel rows (for rendered output).
+          schema:
+            type: integer
+        - name: columns
+          in: query
+          description: Requested number of pixel columns (for rendered output).
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Object returned in the requested content type.
+          content:
+            application/dicom:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Missing or invalid query parameters.
+        "404":
+          description: Object not found.
+        "406":
+          description: Requested content type not supported.
+
+  # ════════════════════════════════════════════════════════════════
+  # Health & Metrics
+  # ════════════════════════════════════════════════════════════════
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      description: >
+        Returns a JSON object indicating whether the server and its
+        dependencies (database, storage) are healthy.
+      tags: [Health]
+      responses:
+        "200":
+          description: Server is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Server is unhealthy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /metrics:
+    get:
+      operationId: prometheusMetrics
+      summary: Prometheus metrics
+      description: >
+        Returns server metrics in Prometheus text exposition format.
+      tags: [Metrics]
+      responses:
+        "200":
+          description: Metrics returned.
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus text exposition format.
+
+  # ════════════════════════════════════════════════════════════════
+  # FHIR R4
+  # ════════════════════════════════════════════════════════════════
+  /fhir/metadata:
+    get:
+      operationId: fhirCapabilityStatement
+      summary: FHIR capability statement
+      description: >
+        Returns the server's FHIR R4 CapabilityStatement resource
+        describing supported interactions and search parameters.
+      tags: [FHIR]
+      responses:
+        "200":
+          description: CapabilityStatement returned.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRResource"
+
+  /fhir/Patient:
+    get:
+      operationId: searchPatients
+      summary: Search FHIR Patient resources
+      description: >
+        Searches for Patient resources.  Supports standard FHIR search
+        parameters such as `identifier`, `name`, `birthdate`, and
+        `gender`.
+      tags: [FHIR]
+      parameters:
+        - name: identifier
+          in: query
+          description: Patient identifier (e.g. MRN).
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: Patient name (partial match).
+          schema:
+            type: string
+        - name: birthdate
+          in: query
+          description: Patient date of birth (YYYY-MM-DD).
+          schema:
+            type: string
+            format: date
+        - name: gender
+          in: query
+          description: Patient gender.
+          schema:
+            type: string
+            enum: [male, female, other, unknown]
+        - name: _count
+          in: query
+          description: Maximum number of results to return.
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          description: Offset for pagination.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FHIR Bundle of matching Patient resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRBundle"
+
+  /fhir/Patient/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FHIRResourceId"
+    get:
+      operationId: readPatient
+      summary: Read a FHIR Patient resource
+      tags: [FHIR]
+      responses:
+        "200":
+          description: Patient resource returned.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRResource"
+        "404":
+          description: Patient not found.
+
+  /fhir/ImagingStudy:
+    get:
+      operationId: searchImagingStudies
+      summary: Search FHIR ImagingStudy resources
+      description: >
+        Searches for ImagingStudy resources.  Supports search parameters
+        such as `patient`, `identifier`, `started`, and `modality`.
+      tags: [FHIR]
+      parameters:
+        - name: patient
+          in: query
+          description: Reference to the Patient resource.
+          schema:
+            type: string
+        - name: identifier
+          in: query
+          description: Study Instance UID or Accession Number.
+          schema:
+            type: string
+        - name: started
+          in: query
+          description: Study start date (YYYY-MM-DD or range with `ge`, `le` prefixes).
+          schema:
+            type: string
+        - name: modality
+          in: query
+          description: Modality code (e.g. CT, MR).
+          schema:
+            type: string
+        - name: _count
+          in: query
+          description: Maximum number of results to return.
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          description: Offset for pagination.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FHIR Bundle of matching ImagingStudy resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRBundle"
+
+  /fhir/ImagingStudy/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FHIRResourceId"
+    get:
+      operationId: readImagingStudy
+      summary: Read a FHIR ImagingStudy resource
+      tags: [FHIR]
+      responses:
+        "200":
+          description: ImagingStudy resource returned.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRResource"
+        "404":
+          description: ImagingStudy not found.
+
+  /fhir/DiagnosticReport:
+    get:
+      operationId: searchDiagnosticReports
+      summary: Search FHIR DiagnosticReport resources
+      description: >
+        Searches for DiagnosticReport resources linked to imaging
+        studies.
+      tags: [FHIR]
+      parameters:
+        - name: patient
+          in: query
+          description: Reference to the Patient resource.
+          schema:
+            type: string
+        - name: identifier
+          in: query
+          description: Report identifier.
+          schema:
+            type: string
+        - name: date
+          in: query
+          description: Report date (YYYY-MM-DD or range).
+          schema:
+            type: string
+        - name: _count
+          in: query
+          description: Maximum number of results to return.
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          description: Offset for pagination.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FHIR Bundle of matching DiagnosticReport resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRBundle"
+
+  /fhir/DiagnosticReport/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FHIRResourceId"
+    get:
+      operationId: readDiagnosticReport
+      summary: Read a FHIR DiagnosticReport resource
+      tags: [FHIR]
+      responses:
+        "200":
+          description: DiagnosticReport resource returned.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRResource"
+        "404":
+          description: DiagnosticReport not found.
+
+  /fhir/Endpoint:
+    get:
+      operationId: searchEndpoints
+      summary: Search FHIR Endpoint resources
+      description: >
+        Searches for Endpoint resources representing DICOM and DICOMweb
+        connection details.
+      tags: [FHIR]
+      parameters:
+        - name: connection-type
+          in: query
+          description: Connection type code.
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Endpoint status.
+          schema:
+            type: string
+            enum: [active, suspended, error, off, entered-in-error]
+        - name: _count
+          in: query
+          description: Maximum number of results to return.
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          description: Offset for pagination.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FHIR Bundle of matching Endpoint resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRBundle"
+
+  /fhir/Endpoint/{id}:
+    parameters:
+      - $ref: "#/components/parameters/FHIRResourceId"
+    get:
+      operationId: readEndpoint
+      summary: Read a FHIR Endpoint resource
+      tags: [FHIR]
+      responses:
+        "200":
+          description: Endpoint resource returned.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "#/components/schemas/FHIRResource"
+        "404":
+          description: Endpoint not found.
+
+components:
+  securitySchemes:
+    tls:
+      type: mutualTLS
+      description: >
+        Optional mutual TLS authentication.  When TLS is enabled the
+        server validates client certificates against the configured
+        trust store.
+
+  parameters:
+    StudyUID:
+      name: studyUID
+      in: path
+      required: true
+      description: DICOM Study Instance UID (0020,000D).
+      schema:
+        type: string
+        examples: ["1.2.840.113619.2.55.3.604688119.969.1068871842.109"]
+    SeriesUID:
+      name: seriesUID
+      in: path
+      required: true
+      description: DICOM Series Instance UID (0020,000E).
+      schema:
+        type: string
+    InstanceUID:
+      name: instanceUID
+      in: path
+      required: true
+      description: DICOM SOP Instance UID (0008,0018).
+      schema:
+        type: string
+    WorkitemUID:
+      name: workitemUID
+      in: path
+      required: true
+      description: UPS Workitem SOP Instance UID.
+      schema:
+        type: string
+    AETitle:
+      name: aeTitle
+      in: path
+      required: true
+      description: DICOM Application Entity Title of the subscriber.
+      schema:
+        type: string
+        maxLength: 16
+    FHIRResourceId:
+      name: id
+      in: path
+      required: true
+      description: Logical FHIR resource identifier.
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of results to return.
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    Offset:
+      name: offset
+      in: query
+      description: Number of results to skip for pagination.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    IncludeField:
+      name: includefield
+      in: query
+      description: >
+        DICOM attribute keyword or `all` to include additional fields
+        in the response.
+      schema:
+        type: string
+    FuzzyMatching:
+      name: fuzzymatching
+      in: query
+      description: Enable fuzzy semantic matching of person names.
+      schema:
+        type: boolean
+        default: false
+
+  schemas:
+    DicomJsonObject:
+      type: object
+      description: >
+        A DICOM JSON Model object as defined in DICOM PS3.18 §F.2.
+        Each key is an eight-character DICOM tag (e.g. `0020000D`)
+        and the value contains `vr` and `Value` fields.
+      additionalProperties:
+        type: object
+        properties:
+          vr:
+            type: string
+            description: DICOM Value Representation.
+          Value:
+            type: array
+            description: Attribute values.
+            items: {}
+          BulkDataURI:
+            type: string
+            format: uri
+            description: URI reference for bulk data retrieval.
+
+    StowResponse:
+      type: object
+      description: >
+        STOW-RS response dataset containing references to stored,
+        failed, and warning instances.
+      properties:
+        "00081190":
+          type: object
+          description: Retrieve URL (0008,1190).
+          properties:
+            vr:
+              type: string
+              const: UR
+            Value:
+              type: array
+              items:
+                type: string
+                format: uri
+        "00081198":
+          type: object
+          description: Failed SOP Sequence (0008,1198).
+          properties:
+            vr:
+              type: string
+              const: SQ
+            Value:
+              type: array
+              items:
+                type: object
+        "00081199":
+          type: object
+          description: Referenced SOP Sequence (0008,1199).
+          properties:
+            vr:
+              type: string
+              const: SQ
+            Value:
+              type: array
+              items:
+                type: object
+
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          description: Overall health status.
+          enum: [healthy, degraded, unhealthy]
+        database:
+          type: string
+          description: Database connectivity status.
+          enum: [ok, error]
+        storage:
+          type: string
+          description: Storage subsystem status.
+          enum: [ok, degraded, error]
+        uptime:
+          type: number
+          format: double
+          description: Server uptime in seconds.
+
+    FHIRResource:
+      type: object
+      description: >
+        A FHIR R4 resource.  The `resourceType` property identifies
+        the concrete type (e.g. Patient, ImagingStudy).
+      required: [resourceType]
+      properties:
+        resourceType:
+          type: string
+          description: FHIR resource type name.
+          examples: ["Patient", "ImagingStudy", "CapabilityStatement"]
+        id:
+          type: string
+          description: Logical resource identifier.
+        meta:
+          type: object
+          properties:
+            versionId:
+              type: string
+            lastUpdated:
+              type: string
+              format: date-time
+      additionalProperties: true
+
+    FHIRBundle:
+      type: object
+      description: A FHIR R4 Bundle resource containing search results.
+      required: [resourceType, type]
+      properties:
+        resourceType:
+          type: string
+          const: Bundle
+        type:
+          type: string
+          const: searchset
+        total:
+          type: integer
+          description: Total number of matching resources.
+        link:
+          type: array
+          items:
+            type: object
+            properties:
+              relation:
+                type: string
+                description: Link relation (e.g. `self`, `next`).
+              url:
+                type: string
+                format: uri
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              fullUrl:
+                type: string
+                format: uri
+              resource:
+                $ref: "#/components/schemas/FHIRResource"
