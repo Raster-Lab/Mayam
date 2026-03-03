@@ -242,21 +242,21 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 12 — Security Hardening & IHE Compliance 🔲 Not Started
+## Milestone 12 — Security Hardening & IHE Compliance ✅ Complete
 
 **Goal:** Production-grade security and IHE profile conformance.
 
-- [ ] Implement **IHE ATNA** (Audit Trail and Node Authentication):
+- [x] Implement **IHE ATNA** (Audit Trail and Node Authentication):
   - Structured audit messages (RFC 3881 / DICOM Audit Message XML).
   - Syslog export (TLS-secured UDP/TCP).
   - Tamper-evident local audit log storage.
-- [ ] Implement **Anonymisation / Pseudonymisation** profiles for research data export (DICOM PS3.15 Annex E).
-- [ ] Implement per-study and per-patient **Access Control Lists (ACLs)** for sensitive data.
-- [ ] Enforce **Delete Protect** — reject deletion requests at Patient, Accession, and Study level when the flag is set; require explicit flag removal before deletion proceeds.
-- [ ] Enforce **Privacy Flag** — restrict C-FIND, C-MOVE, C-GET, and DICOMweb query/retrieve responses for flagged entities to explicitly authorised users; suppress flagged entities from routing rules unless an override is present.
-- [ ] Conduct security review: TLS configuration, input validation, DICOM fuzzing, API authentication.
-- [ ] Publish **IHE Integration Statements** for targeted profiles (SWF, PIR, CPI, KIN, XDS-I.b).
-- [ ] Provide GDPR and HIPAA compliance configuration guides.
+- [x] Implement **Anonymisation / Pseudonymisation** profiles for research data export (DICOM PS3.15 Annex E).
+- [x] Implement per-study and per-patient **Access Control Lists (ACLs)** for sensitive data.
+- [x] Enforce **Delete Protect** — reject deletion requests at Patient, Accession, and Study level when the flag is set; require explicit flag removal before deletion proceeds.
+- [x] Enforce **Privacy Flag** — restrict C-FIND, C-MOVE, C-GET, and DICOMweb query/retrieve responses for flagged entities to explicitly authorised users; suppress flagged entities from routing rules unless an override is present.
+- [x] Conduct security review: TLS configuration, input validation, DICOM fuzzing, API authentication.
+- [x] Publish **IHE Integration Statements** for targeted profiles (SWF, PIR, CPI, KIN, XDS-I.b).
+- [x] Provide GDPR and HIPAA compliance configuration guides.
 
 ---
 
@@ -322,7 +322,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 9 | Near-Line Storage & Backup | 🔲 Not Started | HSM, storage commitment, backup & recovery |
 | 10 | Worklist, MPPS & Workflow | ✅ Complete | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |
 | 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), FHIR R4 REST endpoints (Patient, ImagingStudy, DiagnosticReport, Endpoint), HL7 workflow integration (ORM/ORU/ADT), configurable message routing & transformation, ACK/NACK, ServerConfiguration.HL7, integration tests; pending: HL7kit `ImagingStudy` & `Endpoint` contributions |
-| 12 | Security Hardening & IHE Compliance | 🔲 Not Started | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
+| 12 | Security Hardening & IHE Compliance | ✅ Complete | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
 | 13 | Monitoring, Metrics & Operations | 🔲 Not Started | Prometheus, Docker, systemd, health checks |
 | 14 | Performance Optimisation | 🔲 Not Started | Benchmarks, tuning, stress testing |
 | 15 | Documentation, Packaging & Release | 🔲 Not Started | Conformance statement, guides, macOS DMG/PKG installer, Homebrew, APT/RPM, v1.0.0 |

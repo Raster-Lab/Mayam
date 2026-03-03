@@ -357,6 +357,51 @@ public struct ServerConfiguration: Sendable, Equatable {
         }
     }
 
+    /// Security hardening and IHE compliance configuration.
+    public struct Security: Sendable, Equatable {
+        /// ATNA audit trail configuration.
+        public var atnaEnabled: Bool
+
+        /// HMAC secret used for tamper-evident audit log integrity hashing.
+        ///
+        /// > Important: Change this value before deploying to production.
+        public var atnaHMACSecret: String
+
+        /// Syslog exporter configuration for ATNA audit message export.
+        public var syslog: SyslogExporter.Configuration
+
+        /// Whether anonymisation/pseudonymisation export is enabled.
+        public var anonymisationEnabled: Bool
+
+        /// Whether per-entity ACL enforcement is enabled.
+        public var aclEnabled: Bool
+
+        /// Whether delete protection enforcement is enabled.
+        public var deleteProtectionEnabled: Bool
+
+        /// Whether privacy flag enforcement is enabled.
+        public var privacyFlagEnabled: Bool
+
+        /// Creates a security configuration.
+        public init(
+            atnaEnabled: Bool = false,
+            atnaHMACSecret: String = "change-me-in-production",
+            syslog: SyslogExporter.Configuration = SyslogExporter.Configuration(),
+            anonymisationEnabled: Bool = false,
+            aclEnabled: Bool = false,
+            deleteProtectionEnabled: Bool = true,
+            privacyFlagEnabled: Bool = true
+        ) {
+            self.atnaEnabled = atnaEnabled
+            self.atnaHMACSecret = atnaHMACSecret
+            self.syslog = syslog
+            self.anonymisationEnabled = anonymisationEnabled
+            self.aclEnabled = aclEnabled
+            self.deleteProtectionEnabled = deleteProtectionEnabled
+            self.privacyFlagEnabled = privacyFlagEnabled
+        }
+    }
+
     /// Codec configuration for image transcoding and compressed copy creation.
     public struct Codec: Sendable, Equatable {
         /// Whether on-demand transcoding is enabled (transcode only when a
@@ -413,6 +458,9 @@ public struct ServerConfiguration: Sendable, Equatable {
     /// HL7 v2.x and FHIR R4 integration settings.
     public var hl7: HL7
 
+    /// Security hardening and IHE compliance settings.
+    public var security: Security
+
     // MARK: - Initialiser
 
     public init(
@@ -425,7 +473,8 @@ public struct ServerConfiguration: Sendable, Equatable {
         web: Web = Web(),
         admin: Admin = Admin(),
         ldap: LDAP = LDAP(),
-        hl7: HL7 = HL7()
+        hl7: HL7 = HL7(),
+        security: Security = Security()
     ) {
         self.dicom = dicom
         self.storage = storage
@@ -437,6 +486,7 @@ public struct ServerConfiguration: Sendable, Equatable {
         self.admin = admin
         self.ldap = ldap
         self.hl7 = hl7
+        self.security = security
     }
 }
 
@@ -444,7 +494,7 @@ public struct ServerConfiguration: Sendable, Equatable {
 
 extension ServerConfiguration: Codable {
     enum CodingKeys: String, CodingKey {
-        case dicom, storage, log, codec, hsm, backup, web, admin, ldap, hl7
+        case dicom, storage, log, codec, hsm, backup, web, admin, ldap, hl7, security
     }
 
     public init(from decoder: any Decoder) throws {
@@ -459,6 +509,7 @@ extension ServerConfiguration: Codable {
         self.admin = try container.decodeIfPresent(Admin.self, forKey: .admin) ?? Admin()
         self.ldap = try container.decodeIfPresent(LDAP.self, forKey: .ldap) ?? LDAP()
         self.hl7 = try container.decodeIfPresent(HL7.self, forKey: .hl7) ?? HL7()
+        self.security = try container.decodeIfPresent(Security.self, forKey: .security) ?? Security()
     }
 }
 
@@ -630,5 +681,23 @@ extension ServerConfiguration.Backup: Codable {
         self.enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
         self.targets = try c.decodeIfPresent([BackupTarget].self, forKey: .targets) ?? []
         self.schedule = try c.decodeIfPresent(BackupSchedule.self, forKey: .schedule) ?? BackupSchedule()
+    }
+}
+
+extension ServerConfiguration.Security: Codable {
+    enum CodingKeys: String, CodingKey {
+        case atnaEnabled, atnaHMACSecret, syslog, anonymisationEnabled,
+             aclEnabled, deleteProtectionEnabled, privacyFlagEnabled
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.atnaEnabled = try c.decodeIfPresent(Bool.self, forKey: .atnaEnabled) ?? false
+        self.atnaHMACSecret = try c.decodeIfPresent(String.self, forKey: .atnaHMACSecret) ?? "change-me-in-production"
+        self.syslog = try c.decodeIfPresent(SyslogExporter.Configuration.self, forKey: .syslog) ?? SyslogExporter.Configuration()
+        self.anonymisationEnabled = try c.decodeIfPresent(Bool.self, forKey: .anonymisationEnabled) ?? false
+        self.aclEnabled = try c.decodeIfPresent(Bool.self, forKey: .aclEnabled) ?? false
+        self.deleteProtectionEnabled = try c.decodeIfPresent(Bool.self, forKey: .deleteProtectionEnabled) ?? true
+        self.privacyFlagEnabled = try c.decodeIfPresent(Bool.self, forKey: .privacyFlagEnabled) ?? true
     }
 }

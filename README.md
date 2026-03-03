@@ -159,13 +159,14 @@ Leveraging Raster-Lab's native Swift codecs for best-in-class performance on App
 - **DICOM TLS** — Encrypted DICOM associations per DICOM PS3.15.
 - **HTTPS Everywhere** — All web services served over TLS.
 - **LDAP/AD Authentication** — Centralised identity management.
-- **IHE ATNA Audit Trail** — Tamper-evident logging of all access and modifications.
+- **IHE ATNA Audit Trail** — Tamper-evident logging of all access and modifications; structured RFC 3881 / DICOM Audit Message XML format; TLS-secured syslog export; HMAC-SHA256 integrity hashing.
 - **Data Integrity** — SHA-256 checksums on archived objects; periodic integrity scans.
-- **Access Control Lists (ACLs)** — Fine-grained per-study, per-patient access where required.
+- **Access Control Lists (ACLs)** — Fine-grained per-study, per-patient access where required; default-deny evaluation with explicit allow/deny entries.
 - **Delete Protect** — Configurable deletion protection flag at Patient, Accession, and Study level; prevents accidental or unauthorised deletion of protected records.
 - **Privacy Flag** — Configurable access restriction flag at Patient, Accession, and Study level; restricts query, retrieve, and routing to authorised users.
-- **Anonymisation / Pseudonymisation** — Built-in DICOM tag stripping profiles for research export.
-- **GDPR / HIPAA Awareness** — Configuration guides and tooling to support regulatory compliance workflows.
+- **Anonymisation / Pseudonymisation** — Built-in DICOM PS3.15 Annex E profiles for research data export (Basic Profile, Retain Long Full Dates, Retain UIDs, Retain Patient Characteristics, Clean Descriptors).
+- **IHE Integration Statements** — Published conformance declarations for SWF, PIR, CPI, KIN, XDS-I.b, and ATNA profiles.
+- **GDPR / HIPAA Awareness** — Configuration guides and tooling to support regulatory compliance workflows (see `COMPLIANCE.md`).
 
 ### Deployment & Operations
 
@@ -379,6 +380,9 @@ Mayam/
 │   │   ├── Models/           # Patient, Study, Accession, Series, Instance, StoragePolicy,
 │   │   │                     # Representation, RepresentationPolicy, ScheduledProcedureStep,
 │   │   │                     # PerformedProcedureStep, RISEvent, WebhookSubscription, etc.
+│   │   ├── Security/         # ATNAAuditEvent/Repository (IHE ATNA), SyslogExporter,
+│   │   │                     # DICOMAnonymiser (PS3.15 Annex E), AccessControlEntry/Service,
+│   │   │                     # DeleteProtectionService, PrivacyFlagService, IHEIntegrationStatement
 │   │   ├── Storage/          # StorageLayout (on-disk hierarchy), StudyArchiver (ZIP/TAR+Zstd),
 │   │   │                     # CompressedCopyManager (compressed copy on receipt, batch transcoding)
 │   │   └── Workflow/         # WorkflowEngine (RIS event catalogue + subscriptions),
@@ -400,6 +404,7 @@ Mayam/
 │       └── ci.yml            # CI for macOS + Linux
 ├── Package.swift
 ├── README.md
+├── COMPLIANCE.md             # GDPR & HIPAA compliance configuration guide
 └── milestones.md
 ```
 
