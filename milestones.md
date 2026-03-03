@@ -234,11 +234,11 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
   - `DiagnosticReport` — radiology report references (available in HL7kit `FHIRkit`).
   - `Endpoint` — FHIR endpoint discovery for DICOMweb URLs (requires HL7kit `FHIRkit` addition).
 - [x] Implement **HL7 v2.x workflow integration** for order-driven imaging workflows — `HL7WorkflowIntegration` actor supporting ORM (order processing with placer/filler order numbers, accession, modality), ORU (study availability notification from RIS events), and ADT (patient demographic updates) message types.
-- [ ] Implement configurable message routing and transformation rules, leveraging HL7kit's `MessageRouter` and transformation infrastructure where applicable.
+- [x] Implement configurable message routing and transformation rules, leveraging HL7kit's `MessageRouter` and transformation infrastructure where applicable.
 - [x] Support HL7 message acknowledgement (ACK/NACK) workflows using HL7kit's `HL7v2Kit` ACK message support — `ACKMessage.respond(to:)` integration with manual `buildACK()` fallback; acknowledgement codes `AA` (accept), `AE` (error), `AR` (reject).
 - [x] Add `hl7` configuration section to `ServerConfiguration` — MLLP port, TLS toggle and certificate/key paths, FHIR enable/disable, FHIR base path; YAML and environment variable override support.
 - [x] Write unit tests for FHIR R4 resource models (JSON round-trip, status encoding, external JSON decoding, `Equatable` conformance) and HL7 workflow integration (order processing, ORU generation, activation lifecycle, `Codable` round-trip).
-- [ ] Write integration tests with sample HL7 and FHIR message flows.
+- [x] Write integration tests with sample HL7 and FHIR message flows.
 
 ---
 
@@ -321,7 +321,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 8 | User Management & LDAP | ✅ Complete | LDAP auth, RBAC, DICOM LDAP configuration |
 | 9 | Near-Line Storage & Backup | 🔲 Not Started | HSM, storage commitment, backup & recovery |
 | 10 | Worklist, MPPS & Workflow | ✅ Complete | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |
-| 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), HL7 workflow integration (ORM/ORU/ADT), ACK/NACK, ServerConfiguration.HL7; pending: FHIR REST endpoints, message routing, HL7kit `ImagingStudy` & `Endpoint` contributions |
+| 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), FHIR R4 REST endpoints (Patient, ImagingStudy, DiagnosticReport, Endpoint), HL7 workflow integration (ORM/ORU/ADT), configurable message routing & transformation, ACK/NACK, ServerConfiguration.HL7, integration tests; pending: HL7kit `ImagingStudy` & `Endpoint` contributions |
 | 12 | Security Hardening & IHE Compliance | 🔲 Not Started | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
 | 13 | Monitoring, Metrics & Operations | 🔲 Not Started | Prometheus, Docker, systemd, health checks |
 | 14 | Performance Optimisation | 🔲 Not Started | Benchmarks, tuning, stress testing |
