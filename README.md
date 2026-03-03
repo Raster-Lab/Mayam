@@ -373,6 +373,8 @@ Mayam/
 │   │   │                     # RetrieveSCP (C-MOVE), GetSCP (C-GET), and corresponding SCU clients,
 │   │   │                     # ModalityWorklistSCP (MWL C-FIND), MPPSSCP (N-CREATE/N-SET),
 │   │   │                     # InstanceAvailabilityNotificationSCU (IAN), StorageCommitmentSCP
+│   │   ├── HL7/              # MLLPListener (MLLP framing, ACK/NACK via HL7v2Kit),
+│   │   │                     # FHIRResourceModels (ImagingStudy, Endpoint placeholders)
 │   │   ├── Logging/          # Cross-platform logging subsystem
 │   │   ├── Models/           # Patient, Study, Accession, Series, Instance, StoragePolicy,
 │   │   │                     # Representation, RepresentationPolicy, ScheduledProcedureStep,

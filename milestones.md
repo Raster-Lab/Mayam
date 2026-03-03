@@ -208,7 +208,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 
 ---
 
-## Milestone 11 — HL7 & FHIR Interoperability 🔲 Not Started
+## Milestone 11 — HL7 & FHIR Interoperability 🟡 In Progress
 
 **Goal:** Full healthcare messaging integration using [HL7kit](https://github.com/Raster-Lab/HL7kit). All HL7 v2.x, HL7 v3.x, and FHIR R4 functionality **must** be built on HL7kit's `HL7v2Kit`, `HL7v3Kit`, and `FHIRkit` modules respectively — do not re-implement parsing, serialisation, validation, networking, or resource models that HL7kit already provides.
 
@@ -223,14 +223,21 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 > - `Endpoint` — needed for FHIR endpoint discovery for DICOMweb URLs.
 
 - [ ] **Prerequisite:** Contribute `ImagingStudy` and `Endpoint` FHIR R4 resource implementations to [HL7kit's FHIRkit module](https://github.com/Raster-Lab/HL7kit/tree/main/Sources/FHIRkit) before starting Mayam integration.
-- [ ] Implement an **HL7 v2.x MLLP listener** using HL7kit's `HL7v2Kit` module for ADT (patient demographics), ORM (orders), and ORU (results) messages.
-- [ ] Implement **HL7 FHIR R4** resource endpoints using HL7kit's `FHIRkit` module:
+- [x] Implement an **HL7 v2.x MLLP listener** using HL7kit's `HL7v2Kit` module for ADT (patient demographics), ORM (orders), and ORU (results) messages — `MLLPListener` actor with `MLLPListenerConfiguration`, message parsing via `HL7v2Message.parse()`, configurable message handler dispatch, and TLS 1.3 support.
+- [x] Implement local **FHIR R4 resource models** as interim placeholders (to be retired and replaced by HL7kit `FHIRkit` implementations once the prerequisite contribution above is complete):
+  - `FHIRImagingStudy` — DICOM imaging study as a FHIR R4 ImagingStudy resource (status, subject, series, instances, endpoints, identifiers, modalities).
+  - `FHIREndpoint` — DICOMweb endpoint as a FHIR R4 Endpoint resource (connection type, payload types, MIME types, address).
+  - Supporting types: `FHIRReference`, `FHIRIdentifier`, `FHIRCoding`, `FHIRCodeableConcept`, `FHIRAnnotation`, `FHIRContactPoint`, `FHIRPeriod`.
+- [ ] Implement **HL7 FHIR R4** REST endpoints using HL7kit's `FHIRkit` module:
   - `ImagingStudy` — expose studies as FHIR resources (requires HL7kit `FHIRkit` addition).
   - `Patient` — patient demographics synchronisation (available in HL7kit `FHIRkit`).
   - `DiagnosticReport` — radiology report references (available in HL7kit `FHIRkit`).
   - `Endpoint` — FHIR endpoint discovery for DICOMweb URLs (requires HL7kit `FHIRkit` addition).
+- [x] Implement **HL7 v2.x workflow integration** for order-driven imaging workflows — `HL7WorkflowIntegration` actor supporting ORM (order processing with placer/filler order numbers, accession, modality), ORU (study availability notification from RIS events), and ADT (patient demographic updates) message types.
 - [ ] Implement configurable message routing and transformation rules, leveraging HL7kit's `MessageRouter` and transformation infrastructure where applicable.
-- [ ] Support HL7 message acknowledgement (ACK/NACK) workflows using HL7kit's `HL7v2Kit` ACK message support.
+- [x] Support HL7 message acknowledgement (ACK/NACK) workflows using HL7kit's `HL7v2Kit` ACK message support — `ACKMessage.respond(to:)` integration with manual `buildACK()` fallback; acknowledgement codes `AA` (accept), `AE` (error), `AR` (reject).
+- [x] Add `hl7` configuration section to `ServerConfiguration` — MLLP port, TLS toggle and certificate/key paths, FHIR enable/disable, FHIR base path; YAML and environment variable override support.
+- [x] Write unit tests for FHIR R4 resource models (JSON round-trip, status encoding, external JSON decoding, `Equatable` conformance) and HL7 workflow integration (order processing, ORU generation, activation lifecycle, `Codable` round-trip).
 - [ ] Write integration tests with sample HL7 and FHIR message flows.
 
 ---
@@ -314,7 +321,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
 | 8 | User Management & LDAP | ✅ Complete | LDAP auth, RBAC, DICOM LDAP configuration |
 | 9 | Near-Line Storage & Backup | 🔲 Not Started | HSM, storage commitment, backup & recovery |
 | 10 | Worklist, MPPS & Workflow | ✅ Complete | MWL SCP, MPPS, IAN (DICOM + REST), RIS event catalog, webhook delivery |
-| 11 | HL7 & FHIR Interoperability | 🔲 Not Started | HL7 v2.x MLLP (via HL7kit HL7v2Kit), FHIR R4 resources (via HL7kit FHIRkit); requires `ImagingStudy` & `Endpoint` additions to HL7kit |
+| 11 | HL7 & FHIR Interoperability | 🟡 In Progress | HL7 v2.x MLLP listener (via HL7kit HL7v2Kit), interim FHIR R4 resource models (local ImagingStudy & Endpoint — to be replaced by HL7kit), HL7 workflow integration (ORM/ORU/ADT), ACK/NACK, ServerConfiguration.HL7; pending: FHIR REST endpoints, message routing, HL7kit `ImagingStudy` & `Endpoint` contributions |
 | 12 | Security Hardening & IHE Compliance | 🔲 Not Started | ATNA, anonymisation, ACLs, Delete Protect & Privacy Flag enforcement, IHE profiles |
 | 13 | Monitoring, Metrics & Operations | 🔲 Not Started | Prometheus, Docker, systemd, health checks |
 | 14 | Performance Optimisation | 🔲 Not Started | Benchmarks, tuning, stress testing |
