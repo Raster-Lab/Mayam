@@ -32,6 +32,9 @@ public actor HSMEngine {
     /// History of migration operations for auditing.
     private var migrationHistory: [MigrationEvent] = []
 
+    /// Recall prefetch cache for reducing near-line recall latency.
+    private let recallCache: RecallPrefetchCache
+
     // MARK: - Initialiser
 
     /// Creates a new HSM engine.
@@ -39,9 +42,16 @@ public actor HSMEngine {
     /// - Parameters:
     ///   - configuration: HSM configuration defining tiers and migration rules.
     ///   - logger: Logger instance for HSM events.
-    public init(configuration: HSMConfiguration, logger: MayamLogger) {
+    ///   - recallCache: Optional recall prefetch cache (default: new instance
+    ///     with 128 entries, 1-hour TTL).
+    public init(
+        configuration: HSMConfiguration,
+        logger: MayamLogger,
+        recallCache: RecallPrefetchCache = RecallPrefetchCache()
+    ) {
         self.configuration = configuration
         self.logger = logger
+        self.recallCache = recallCache
     }
 
     // MARK: - Public Methods
@@ -96,14 +106,15 @@ public actor HSMEngine {
 
     /// Records an access to a study, updating its last-access timestamp.
     ///
-    /// If the study is on a near-line or archive tier, this triggers a
-    /// transparent recall to the online tier.
+    /// If the study is on a near-line or archive tier, this first checks the
+    /// recall prefetch cache before performing a full recall, reducing latency
+    /// for recently or proactively recalled studies.
     ///
     /// - Parameter studyInstanceUID: The Study Instance UID.
     /// - Returns: The study's current path after any recall, or `nil` if
     ///   the study is not tracked.
     /// - Throws: ``HSMError`` if the recall fails.
-    public func accessStudy(studyInstanceUID: String) throws -> String? {
+    public func accessStudy(studyInstanceUID: String) async throws -> String? {
         guard var record = tierRecords[studyInstanceUID] else {
             return nil
         }
@@ -111,8 +122,36 @@ public actor HSMEngine {
         record.lastAccessedAt = Date()
 
         if record.currentTier != .online {
+            // Check the recall prefetch cache first for reduced latency
+            if let cached = await recallCache.get(studyInstanceUID) {
+                record.currentTier = .online
+                record.currentPath = cached.onlinePath
+                record.migratedAt = Date()
+                tierRecords[studyInstanceUID] = record
+                logger.info("HSM: Cache hit for study '\(studyInstanceUID)' — skipping recall")
+
+                // Trigger prefetch of related studies
+                let candidates = await recallCache.prefetchCandidates(for: studyInstanceUID)
+                if !candidates.isEmpty {
+                    logger.debug("HSM: Prefetch candidates for '\(studyInstanceUID)': \(candidates)")
+                }
+
+                return record.currentPath
+            }
+
             logger.info("HSM: Recalling study '\(studyInstanceUID)' from \(record.currentTier.rawValue) to online tier")
+            let recallStart = Date()
             record = try recallToOnline(record: record)
+
+            // Cache the recall result for future accesses
+            let recallDuration = Date().timeIntervalSince(recallStart)
+            let cacheEntry = RecallCacheEntry(
+                studyInstanceUID: studyInstanceUID,
+                onlinePath: record.currentPath,
+                recalledFrom: record.currentTier == .online ? .nearLine : record.currentTier,
+                recallDurationSeconds: recallDuration
+            )
+            await recallCache.put(studyInstanceUID, entry: cacheEntry)
         }
 
         tierRecords[studyInstanceUID] = record
@@ -188,6 +227,11 @@ public actor HSMEngine {
     /// Returns the history of migration events.
     public func getMigrationHistory() -> [MigrationEvent] {
         migrationHistory
+    }
+
+    /// Returns the recall prefetch cache for external access or monitoring.
+    public func getRecallCache() -> RecallPrefetchCache {
+        recallCache
     }
 
     // MARK: - Private Helpers
