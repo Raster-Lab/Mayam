@@ -228,7 +228,7 @@ This document defines the phased roadmap for Mayam. Each milestone is a self-con
   - `FHIRImagingStudy` — DICOM imaging study as a FHIR R4 ImagingStudy resource (status, subject, series, instances, endpoints, identifiers, modalities).
   - `FHIREndpoint` — DICOMweb endpoint as a FHIR R4 Endpoint resource (connection type, payload types, MIME types, address).
   - Supporting types: `FHIRReference`, `FHIRIdentifier`, `FHIRCoding`, `FHIRCodeableConcept`, `FHIRAnnotation`, `FHIRContactPoint`, `FHIRPeriod`.
-- [ ] Implement **HL7 FHIR R4** REST endpoints using HL7kit's `FHIRkit` module:
+- [x] Implement **HL7 FHIR R4** REST endpoints using HL7kit's `FHIRkit` module:
   - `ImagingStudy` — expose studies as FHIR resources (requires HL7kit `FHIRkit` addition).
   - `Patient` — patient demographics synchronisation (available in HL7kit `FHIRkit`).
   - `DiagnosticReport` — radiology report references (available in HL7kit `FHIRkit`).
