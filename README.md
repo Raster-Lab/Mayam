@@ -380,6 +380,9 @@ Mayam/
 │   │   ├── Models/           # Patient, Study, Accession, Series, Instance, StoragePolicy,
 │   │   │                     # Representation, RepresentationPolicy, ScheduledProcedureStep,
 │   │   │                     # PerformedProcedureStep, RISEvent, WebhookSubscription, etc.
+│   │   ├── Performance/      # BufferPool (zero-copy reuse), PerformanceProfiler, CodecBenchmark,
+│   │   │                     # ConcurrentStoreOptimiser, QueryPlanOptimiser, RecallPrefetchCache,
+│   │   │                     # StressTester (synthetic DICOM dataset generation)
 │   │   ├── Security/         # ATNAAuditEvent/Repository (IHE ATNA), SyslogExporter,
 │   │   │                     # DICOMAnonymiser (PS3.15 Annex E), AccessControlEntry/Service,
 │   │   │                     # DeleteProtectionService, PrivacyFlagService, IHEIntegrationStatement
@@ -394,6 +397,10 @@ Mayam/
 │   │                         # AdminWebhookHandler (webhook subscription CRUD)
 │   ├── MayamAdmin/           # Web console static assets (single-page app served by AdminServer at /admin/)
 │   └── MayamCLI/             # Command-line administration tools
+├── Benchmarks/
+│   ├── README.md             # Benchmark documentation and baseline results
+│   ├── run_benchmarks.sh     # Reproducible benchmark runner script
+│   └── results/              # Timestamped benchmark output files
 ├── Tests/
 │   ├── MayamCoreTests/       # Core unit tests (including WorkflowTests)
 │   └── MayamWebTests/        # Web layer tests
