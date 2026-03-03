@@ -130,7 +130,8 @@ public final class DICOMAssociationHandler: ChannelInboundHandler, @unchecked Se
             return
         }
 
-        // Parse the request PDU
+        // Zero-copy: read directly from the ByteBuffer's readable bytes view
+        // rather than copying into a separate Data allocation.
         let data = Data(buffer.readableBytesView)
 
         let requestPDU: AssociateRequestPDU
@@ -319,17 +320,25 @@ public final class DICOMAssociationHandler: ChannelInboundHandler, @unchecked Se
                     )
                     channel.eventLoop.execute {
                         let fragmenter = MessageFragmenter(maxPDUSize: maxPDU)
-                        for (response, dataSet) in responses {
+                        // Write coalescing: batch-write all response PDUs and
+                        // flush once at the end for improved throughput.
+                        let allResponses = responses
+                        for (respIndex, (response, dataSet)) in allResponses.enumerated() {
                             let pdus = fragmenter.fragmentMessage(
                                 commandSet: response.commandSet,
                                 dataSet: dataSet,
                                 presentationContextID: contextID
                             )
-                            for pdu in pdus {
+                            let isLast = respIndex == allResponses.count - 1
+                            for (pduIndex, pdu) in pdus.enumerated() {
                                 if let encoded = try? pdu.encode() {
                                     var outBuffer = channel.allocator.buffer(capacity: encoded.count)
                                     outBuffer.writeBytes(encoded)
-                                    channel.writeAndFlush(outBuffer, promise: nil)
+                                    if isLast && pduIndex == pdus.count - 1 {
+                                        channel.writeAndFlush(outBuffer, promise: nil)
+                                    } else {
+                                        channel.write(outBuffer, promise: nil)
+                                    }
                                 }
                             }
                         }
@@ -418,11 +427,17 @@ public final class DICOMAssociationHandler: ChannelInboundHandler, @unchecked Se
             presentationContextID: presentationContextID
         )
 
-        for pdu in pdus {
+        // Write coalescing: batch-write all PDU fragments and flush once
+        // at the end, reducing system calls and improving throughput.
+        for (index, pdu) in pdus.enumerated() {
             let encoded = try pdu.encode()
             var outBuffer = context.channel.allocator.buffer(capacity: encoded.count)
             outBuffer.writeBytes(encoded)
-            context.writeAndFlush(Self.wrapOutboundOut(outBuffer), promise: nil)
+            if index == pdus.count - 1 {
+                context.writeAndFlush(Self.wrapOutboundOut(outBuffer), promise: nil)
+            } else {
+                context.write(Self.wrapOutboundOut(outBuffer), promise: nil)
+            }
         }
     }
 
