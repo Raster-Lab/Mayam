@@ -51,7 +51,8 @@ main ──●──●──●──●──●──●──●──●─
 Use the **Create Release Branch** workflow from the Actions tab:
 
 1. Navigate to **Actions → Create Release Branch**.
-2. Click **Run workflow**.
+2. Click **Run workflow** (the branch dropdown does not matter — the workflow
+   always creates from `main`).
 3. Enter the version (e.g. `1.0.0`) and confirm.
 
 The workflow validates the version format, checks that the branch does not
