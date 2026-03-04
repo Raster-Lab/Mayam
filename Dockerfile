@@ -13,7 +13,7 @@
 # ============================================================
 # Stage 1: Build
 # ============================================================
-FROM --platform=$BUILDPLATFORM swift:6.0-jammy AS builder
+FROM swift:6.2-jammy AS builder
 
 WORKDIR /build
 
@@ -23,7 +23,6 @@ RUN swift package resolve
 
 # Copy source code
 COPY Sources/ Sources/
-COPY Tests/ Tests/
 COPY Config/ Config/
 
 # Build release binary
@@ -38,6 +37,7 @@ FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    curl \
     libicu70 \
     && rm -rf /var/lib/apt/lists/*
 
