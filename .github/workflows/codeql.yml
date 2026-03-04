@@ -28,6 +28,9 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode_26.app || true
 
+      - name: Reset SPM cache
+        run: swift package purge-cache && swift package reset
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:

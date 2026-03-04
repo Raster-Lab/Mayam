@@ -34,6 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reset SPM cache
+        run: swift package purge-cache && swift package reset
+
       - name: Build
         run: swift build --build-tests
 
@@ -49,6 +52,9 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode_26.app || true
+
+      - name: Reset SPM cache
+        run: swift package purge-cache && swift package reset
 
       - name: Build
         run: swift build --build-tests
@@ -71,6 +77,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Reset SPM cache
+        run: swift package purge-cache && swift package reset
 
       - name: Build release binary
         run: swift build -c release --static-swift-stdlib
@@ -99,6 +108,9 @@ jobs:
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode_26.app || true
+
+      - name: Reset SPM cache
+        run: swift package purge-cache && swift package reset
 
       - name: Build release binary
         run: swift build -c release
