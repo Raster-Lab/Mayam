@@ -42,13 +42,13 @@ jobs:
 
   test-macos:
     name: Test (macOS)
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.2.app || true
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode_26.app || true
 
       - name: Build
         run: swift build --build-tests
@@ -92,13 +92,13 @@ jobs:
   build-macos:
     name: Build macOS (arm64)
     needs: test-macos
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.2.app || true
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app || sudo xcode-select -s /Applications/Xcode_26.app || true
 
       - name: Build release binary
         run: swift build -c release
