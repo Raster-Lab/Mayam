@@ -17,7 +17,7 @@ permissions:
   security-events: write
 
 jobs:
-  analyze:
+  analyze-swift:
     name: Analyze (Swift)
     runs-on: macos-26
 
@@ -44,3 +44,22 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:swift"
+
+  analyze-actions:
+    name: Analyze (Actions)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: actions
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:actions"
