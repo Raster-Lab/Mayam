@@ -1,0 +1,10 @@
+.git
+.github
+.build
+.swiftpm
+Benchmarks
+Tests
+docs
+packaging
+*.md
+!README.md
