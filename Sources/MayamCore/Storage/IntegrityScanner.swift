@@ -170,12 +170,8 @@ public actor IntegrityScanner {
 
         logger.info("Integrity scan: Starting full archive scan at '\(archivePath)'")
 
-        let fm = FileManager.default
-        guard let enumerator = fm.enumerator(atPath: archivePath) else {
-            throw IntegrityScanError.archiveNotAccessible(path: archivePath)
-        }
+        let dcmPaths = try IntegrityScanner.collectDCMPaths(at: archivePath)
 
-        let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
         for relativePath in dcmPaths {
             result.scannedCount += 1
             let absolutePath = archivePath + "/" + relativePath
@@ -188,6 +184,7 @@ public actor IntegrityScanner {
             }
 
             // Read file and compute checksum
+            let fm = FileManager.default
             guard let fileData = fm.contents(atPath: absolutePath) else {
                 result.errorCount += 1
                 result.violations.append(IntegrityViolation(
@@ -224,6 +221,23 @@ public actor IntegrityScanner {
         logger.info("Integrity scan: Completed — \(result.scannedCount) scanned, \(result.validCount) valid, \(result.mismatchCount) mismatches, \(result.errorCount) errors")
 
         return result
+    }
+
+    /// Collects `.dcm` file paths from the archive directory.
+    ///
+    /// This is a `nonisolated` synchronous helper so that
+    /// `NSDirectoryEnumerator` iteration (which is unavailable from async
+    /// contexts in Swift 6.2) can be used directly.
+    private nonisolated static func collectDCMPaths(at archivePath: String) throws -> [String] {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(atPath: archivePath) else {
+            throw IntegrityScanError.archiveNotAccessible(path: archivePath)
+        }
+        var paths: [String] = []
+        for case let relativePath as String in enumerator where relativePath.hasSuffix(".dcm") {
+            paths.append(relativePath)
+        }
+        return paths
     }
 
     /// Returns the history of scan results.

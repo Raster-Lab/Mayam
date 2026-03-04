@@ -64,13 +64,7 @@ public actor AdminStorageHandler {
     /// - Returns: An ``IntegrityCheckResult`` with the count of examined files.
     public func runIntegrityCheck(archivePath: String) async -> IntegrityCheckResult {
         let startedAt = Date()
-        let fileManager = FileManager.default
-        var checkedCount = 0
-
-        if let enumerator = fileManager.enumerator(atPath: archivePath) {
-            let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
-            checkedCount = dcmPaths.count
-        }
+        let checkedCount = AdminStorageHandler.countDCMFiles(at: archivePath)
 
         return IntegrityCheckResult(
             startedAt: startedAt,
@@ -79,6 +73,21 @@ public actor AdminStorageHandler {
             errorCount: 0,
             status: "complete"
         )
+    }
+
+    /// Counts `.dcm` files under the given path.
+    ///
+    /// This is a `nonisolated` synchronous helper so that
+    /// `NSDirectoryEnumerator` iteration (which is unavailable from async
+    /// contexts in Swift 6.2) can be used directly.
+    private nonisolated static func countDCMFiles(at archivePath: String) -> Int {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(atPath: archivePath) else { return 0 }
+        var count = 0
+        for case let filePath as String in enumerator where filePath.hasSuffix(".dcm") {
+            count += 1
+        }
+        return count
     }
 
     /// Returns the current HSM status including tier statistics.

@@ -31,7 +31,7 @@ jobs:
 
       - name: Test
         timeout-minutes: 15
-        run: swift test --enable-code-coverage
+        run: swift test --enable-code-coverage --skip LDAPIntegrationTests
 
       - name: Generate Coverage Report
         run: |

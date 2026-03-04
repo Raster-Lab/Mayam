@@ -156,6 +156,21 @@ public actor BackupManager {
     private func performLocalBackup(
         to destinationPath: String
     ) async throws -> (objectCount: Int, sizeBytes: Int64) {
+        try BackupManager.copyArchive(
+            from: archivePath,
+            to: destinationPath
+        )
+    }
+
+    /// Copies `.dcm` files from the archive to a timestamped backup directory.
+    ///
+    /// This is a `nonisolated` synchronous helper so that
+    /// `NSDirectoryEnumerator` iteration (which is unavailable from async
+    /// contexts in Swift 6.2) can be used directly.
+    private nonisolated static func copyArchive(
+        from archivePath: String,
+        to destinationPath: String
+    ) throws -> (objectCount: Int, sizeBytes: Int64) {
         let fm = FileManager.default
 
         // Validate destination
@@ -187,8 +202,7 @@ public actor BackupManager {
             throw BackupError.sourceNotAccessible(path: archivePath)
         }
 
-        let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
-        for relativePath in dcmPaths {
+        for case let relativePath as String in enumerator where relativePath.hasSuffix(".dcm") {
             let sourcePath = archivePath + "/" + relativePath
             let destPath = backupDir + "/" + relativePath
 
