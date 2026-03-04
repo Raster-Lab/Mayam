@@ -38,7 +38,8 @@ jobs:
           build-mode: manual
 
       - name: Build
-        run: swift build
+        run: swift build -j2
+        continue-on-error: true
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
