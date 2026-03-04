@@ -175,7 +175,8 @@ public actor IntegrityScanner {
             throw IntegrityScanError.archiveNotAccessible(path: archivePath)
         }
 
-        for case let relativePath as String in enumerator where relativePath.hasSuffix(".dcm") {
+        let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
+        for relativePath in dcmPaths {
             result.scannedCount += 1
             let absolutePath = archivePath + "/" + relativePath
 

@@ -187,7 +187,8 @@ public actor BackupManager {
             throw BackupError.sourceNotAccessible(path: archivePath)
         }
 
-        for case let relativePath as String in enumerator where relativePath.hasSuffix(".dcm") {
+        let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
+        for relativePath in dcmPaths {
             let sourcePath = archivePath + "/" + relativePath
             let destPath = backupDir + "/" + relativePath
 

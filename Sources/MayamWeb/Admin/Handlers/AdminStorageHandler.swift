@@ -68,10 +68,8 @@ public actor AdminStorageHandler {
         var checkedCount = 0
 
         if let enumerator = fileManager.enumerator(atPath: archivePath) {
-            for case let filePath as String in enumerator
-            where filePath.hasSuffix(".dcm") {
-                checkedCount += 1
-            }
+            let dcmPaths = enumerator.allObjects.compactMap { $0 as? String }.filter { $0.hasSuffix(".dcm") }
+            checkedCount = dcmPaths.count
         }
 
         return IntegrityCheckResult(
