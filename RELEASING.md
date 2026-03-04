@@ -48,6 +48,18 @@ main ──●──●──●──●──●──●──●──●─
 
 ### 1. Create the Release Branch
 
+Use the **Create Release Branch** workflow from the Actions tab:
+
+1. Navigate to **Actions → Create Release Branch**.
+2. Click **Run workflow** (the branch dropdown does not matter — the workflow
+   always creates from `main`).
+3. Enter the version (e.g. `1.0.0`) and confirm.
+
+The workflow validates the version format, checks that the branch does not
+already exist, and creates `release/v1.0.0` from `main`.
+
+Alternatively, create the branch manually:
+
 ```bash
 git checkout main
 git pull origin main
@@ -124,6 +136,7 @@ Resolve any conflicts, ensuring `main` includes all stabilisation fixes.
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | **CI** (`.github/workflows/ci.yml`) | Push/PR to `main` or `release/**` | Build, test, and lint |
+| **Create Release Branch** (`.github/workflows/create-release-branch.yml`) | Manual (`workflow_dispatch`) | Create a `release/vX.Y.Z` branch from `main` |
 | **Release** (`.github/workflows/release.yml`) | Tag push `v*.*.*` | Build release binaries, publish Docker images, create GitHub Release |
 | **CodeQL** (`.github/workflows/codeql.yml`) | Push/PR to `main` | Security scanning |
 

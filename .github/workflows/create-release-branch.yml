@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: (see LICENSE)
+#
+# Mayam — Create Release Branch Workflow
+#
+# Manually triggered workflow that creates a release/vX.Y.Z branch from main.
+# This automates step 1 of the release process described in RELEASING.md.
+
+name: Create Release Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 1.0.0, 1.1.0-rc.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-branch:
+    name: Create release/v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$ ]]; then
+            echo "::error::Invalid version format '${VERSION}'. Expected semver (e.g. 1.0.0 or 1.1.0-rc.1)."
+            exit 1
+          fi
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check branch does not already exist
+        run: |
+          if git ls-remote --exit-code --heads origin "release/v${{ inputs.version }}"; then
+            echo "::error::Branch release/v${{ inputs.version }} already exists."
+            exit 1
+          fi
+
+      - name: Create and push release branch
+        run: |
+          git checkout -b "release/v${{ inputs.version }}"
+          git push origin "release/v${{ inputs.version }}"
+          echo "### ✅ Branch created" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release branch \`release/v${{ inputs.version }}\` has been created from \`main\`." >> "$GITHUB_STEP_SUMMARY"

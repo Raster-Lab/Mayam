@@ -431,7 +431,10 @@ Mayam/
 │       └── rpm/mayam.spec        # RPM spec file
 ├── .github/
 │   └── workflows/
-│       └── ci.yml            # CI for macOS + Linux
+│       ├── ci.yml                    # CI for macOS + Linux
+│       ├── create-release-branch.yml # Automated release branch creation
+│       ├── release.yml               # Release build, Docker, GitHub Release
+│       └── codeql.yml                # CodeQL security scanning
 ├── Package.swift
 ├── README.md
 ├── RELEASE_NOTES.md          # v1.0.0 release notes
