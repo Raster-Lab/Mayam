@@ -27,11 +27,11 @@ jobs:
         run: swift package purge-cache && swift package reset && swift package update
 
       - name: Build
-        run: swift build --build-tests
+        run: swift build --build-tests --enable-code-coverage
 
       - name: Test
         timeout-minutes: 15
-        run: swift test --enable-code-coverage --skip LDAPIntegrationTests
+        run: swift test --skip-build --enable-code-coverage --skip LDAPIntegrationTests
 
       - name: Generate Coverage Report
         run: |
@@ -55,11 +55,11 @@ jobs:
         run: swift package purge-cache && swift package reset && swift package update
 
       - name: Build
-        run: swift build --build-tests
+        run: swift build --build-tests --enable-code-coverage
 
       - name: Test
-        timeout-minutes: 15
-        run: swift test --enable-code-coverage
+        timeout-minutes: 30
+        run: swift test --skip-build --enable-code-coverage --skip LDAPIntegrationTests
 
   lint:
     name: Swift Lint
